@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bottom_sheet"
+    android:backgroundTint="@color/blue_dress"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/going_shopping_on_txv"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:background="@drawable/rounded_corner_rectangle"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:text="@string/purchase_date"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/item_name_txv"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:autofillHints="@string/default_product_name_placeholder"
+        android:background="@drawable/rounded_corner_rectangle"
+        android:hint="@string/default_product_name_placeholder"
+        android:inputType="text"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/going_shopping_on_txv" />
+
+    <Spinner
+        android:id="@+id/item_category_spn"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/custom_spinner"
+        android:overlapAnchor="false"
+        android:textSize="18sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/item_name_txv" />
+
+    <EditText
+        android:id="@+id/item_quantity_txv"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:autofillHints="0"
+        android:background="@drawable/rounded_corner_rectangle"
+        android:hint="@string/default_quantity"
+        android:inputType="number"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/item_category_spn" />
+
+    <EditText
+        android:id="@+id/item_unit_price_txv"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:autofillHints="0"
+        android:background="@drawable/rounded_corner_rectangle"
+        android:hint="@string/default_quantity"
+        android:inputType="numberDecimal"
+        android:paddingStart="8dp"
+        android:paddingEnd="0dp"
+        android:textSize="18sp"
+        android:textStyle="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/item_quantity_txv" />
+
+    <Button
+        android:id="@+id/add_Item"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/rounded_square_empty_btn_bg"
+        android:text="@string/add_item"
+        android:textColor="@color/main_color"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/item_unit_price_txv" />
+</androidx.constraintlayout.widget.ConstraintLayout>

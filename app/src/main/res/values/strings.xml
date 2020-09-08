@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">BungaloShopper</string>
+    <string name="main_fragment_name">Bungalo Shopper</string>
+    <string name="shopping_list_name">Shopping List</string>
+    <string name="db_name">bungalo_shopper</string>
+    <string name="default_category_placeholder">Product Category</string>
+    <string name="product_category_icon">Product Category Icon</string>
+    <string name="purchase_item">Purchase Item</string>
+    <string name="todays_shopping_list">Today\'s Shopping List</string>
+    <string name="list_of_items">List of items</string>
+    <string name="default_product_name_placeholder">Product Name</string>
+    <string name="default_quantity">1</string>
+    <string name="add_item">Add</string>
+    <string name="search_list">Search List</string>
+    <string name="add_to_shopping_list">Add to list</string>
+    <string name="purchase_date">Purchase Date</string>
+    <string name="select_shopping_date">Select Shopping Date</string>
+    <string name="set_date_and_time">Set</string>
+    <string name="cancel_date_time">Cancel</string>
+    <string name="remove_item_prompt_title">Remove Item</string>
+    <string name="remove_item_icon">Remove Item Icon</string>
+    <string name="remove_this_item_prompt">Do you want to remove this item?</string>
+    <string name="yes_response">Yes</string>
+    <string name="no_response">No</string>
+    <string name="shopping_date">Shopping Date</string>
+    <string name="stored_shopping_lists">Stored Shopping Lists</string>
+    <string name="search_icon">Search Icon</string>
+    <string name="search_shopping_list">Search List…</string>
+    <string name="add_icon">Add Icon</string>
+    <string name="date_calendar">Date Calendar</string>
+    <string name="update_item">Update</string>
+    <string name="no_shopping_lists">Empty Basket</string>
+
+    <string-array name="categories">
+        <item>Baked Goods</item>
+        <item>Canned Goods</item>
+        <item>Cereals</item>
+        <item>Clothing</item>
+        <item>Dairy</item>
+        <item>Electronics</item>
+        <item>General Merchandise</item>
+        <item>Health and Personal Care</item>
+        <item>Legumes</item>
+        <item>Meats</item>
+        <item>Produce</item>
+        <item>Toiletries</item>
+    </string-array>
+</resources>

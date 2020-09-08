@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/time_root"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/rounded_corner_rectangle"
+    android:paddingBottom="@dimen/default_margin">
+
+    <TextView
+        android:id="@+id/task_date_picker_title_txv"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="center|center_vertical"
+        android:text="@string/select_shopping_date"
+        android:textColor="@color/main_color"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:id="@+id/top_separator_v"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/company_double_bottom_border"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/task_date_picker_title_txv" />
+
+    <LinearLayout
+        android:id="@+id/time_picker_layout"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:background="@color/main_color"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/top_separator_v">
+
+        <NumberPicker
+            android:id="@+id/day_pick_txv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/default_margin"
+            android:backgroundTint="@color/main_color"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/NumberPickerThemeLight" />
+
+        <NumberPicker
+            android:id="@+id/hour_pick_txv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/main_color"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/NumberPickerThemeLight" />
+
+        <NumberPicker
+            android:id="@+id/time_separator_txv"
+            android:layout_width="20dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:backgroundTint="@color/main_color"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/NumberPickerThemeLight" />
+
+        <NumberPicker
+            android:id="@+id/minute_pick_txv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:backgroundTint="@color/main_color"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/NumberPickerThemeLight" />
+
+        <NumberPicker
+            android:id="@+id/time_meridiem_txv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="@dimen/default_margin"
+            android:backgroundTint="@color/main_color"
+            android:descendantFocusability="blocksDescendants"
+            android:theme="@style/NumberPickerThemeLight" />
+
+    </LinearLayout>
+
+    <View
+        android:id="@+id/bottom_separator_v"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@drawable/company_double_top_border"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/time_picker_layout" />
+
+    <Button
+        android:id="@+id/set_date_time_txv"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="100dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="8dp"
+        android:text="@string/set_date_and_time"
+        android:textColor="@color/main_color"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/cancel_date_time_btn"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bottom_separator_v" />
+
+    <Button
+        android:id="@+id/cancel_date_time_btn"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="100dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="4dp"
+        android:text="@string/cancel_date_time"
+        android:textColor="@color/main_color"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bottom_separator_v" />
+</androidx.constraintlayout.widget.ConstraintLayout>

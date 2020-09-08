@@ -1,0 +1,55 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <!--    Working Themes -->
+    <style name="ShoppingListTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/main_color</item>
+        <item name="android:navigationBarColor">@color/colorPrimaryDark</item>
+    </style>
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <!--    Dark Theme   -->
+    <style name="NumberPickerTheme" parent="ThemeOverlay.AppCompat.Light">
+        <item name="colorAccent">@color/main_color</item>
+        <!--        To remove divider of the number picker-->
+        <item name="colorControlNormal">@android:color/transparent</item>
+        <item name="android:textColorPrimary">@color/milk_white</item>
+        <item name="android:background">@color/black</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <!--    Light Theme  -->
+    <style name="NumberPickerThemeLight" parent="ThemeOverlay.AppCompat.Light">
+        <item name="colorAccent">@color/main_color</item>
+        <!--        To remove divider of the number picker-->
+        <item name="colorControlNormal">@android:color/transparent</item>
+        <item name="android:textColorPrimary">@color/milk_white</item>
+        <item name="android:textColorSecondary">@color/main_color</item>
+        <item name="android:background">@color/milk_white</item>
+        <item name="android:textSize">20sp</item>
+    </style>
+
+    <style name="CustomSwitchTheme" parent="Theme.AppCompat">
+        <item name="android:textColorPrimaryDisableOnly">@color/blue_eyes</item>
+        <item name="colorAccent">@color/main_color</item>
+    </style>
+
+    <style name="AppTheme.SplashScreen" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowDisablePreview">true</item>
+    </style>
+
+    <style name="ZoomAnimation">
+        <item name="android:windowEnterAnimation">@null</item>
+        <item name="android:windowExitAnimation">@anim/zoom_out</item>
+    </style>
+
+</resources>

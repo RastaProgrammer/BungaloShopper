@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- disabled state -->
+    <item android:drawable="@drawable/spinner_down_background"
+        android:state_enabled="false"/>
+    <!-- pressed state -->
+    <item android:drawable="@drawable/spinner_down_background"
+        android:state_enabled="true"
+        android:state_pressed="true"
+        android:state_window_focused="true"/>
+    <!-- unselected state -->
+    <item android:drawable="@drawable/spinner_down_background"
+        android:state_enabled="true"
+        android:state_window_focused="true"/>
+    <!-- dropdown list state -->
+    <item android:drawable="@drawable/spinner_up_background"
+        android:state_enabled="true"
+        android:state_focused="true"/>
+    <!-- default -->
+    <item android:drawable="@drawable/spinner_up_background"/>
+</selector>
