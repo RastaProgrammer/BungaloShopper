@@ -1,29 +1,41 @@
 # BungaloShopper
 This application was designed to create a simple shopping list to assist on visits to the store. The application uses the Room Database and LiveData.
 
+## Initial Launch
 The application opens with an empty list which will be updated as shopping lists are created. 
 
 ![NoLists](screenshots/empty_database.png)
 
+## Creating a shopping list
 A shopping list can be created by clicking the plus icon on the app bar.
 
 ![AddItem](screenshots/add_item.png)
 ![ShoppingDate](screenshots/date_picker_dialog.png)
 
+## Stored Shopping Lists
 As items are added a list is popluated by date.
 
 ![List1](screenshots/shopping_list_date.png)
 ![List2](screenshots/shopping_list_date_1.png)
 
+## View Shopping List
 You can tap on one of the dates in the lists of dates to view the shopping list for that date
 
 ![ShoppingList](screenshots/day_list.png)
 
+## List Filter
+You can filter a shopping list by clicking of the search glass on the app bar
+
+![ShoppingList](screenshots/search_filter_1.png)
+![ShoppingList](screenshots/search_filter.png)
+
+## Editing Day's Shopping List
 You can remove and edit items from the shopping lists screen
 
 ![EditItem](screenshots/item_update.png)
 ![RemoveItem](screenshots/delete_item_dialog.png)
 
+## Remove Shopping List
 You can also remove a day's shopping list all together from the main list.
 
 ![RemoveList](screenshots/delete_list_dialog.png)
