@@ -8,12 +8,12 @@
     <string name="purchase_item">Purchase Item</string>
     <string name="todays_shopping_list">Today\'s Shopping List</string>
     <string name="list_of_items">List of items</string>
-    <string name="default_product_name_placeholder">Product Name</string>
+    <string name="default_product_name_placeholder">Enter Product Name</string>
     <string name="default_quantity">1</string>
     <string name="add_item">Add</string>
     <string name="search_list">Search List</string>
     <string name="add_to_shopping_list">Add to list</string>
-    <string name="purchase_date">Purchase Date</string>
+    <string name="purchase_date">Select Purchase Date</string>
     <string name="select_shopping_date">Select Shopping Date</string>
     <string name="set_date_and_time">Set</string>
     <string name="cancel_date_time">Cancel</string>
@@ -32,6 +32,9 @@
     <string name="no_shopping_lists">Empty Basket</string>
     <string name="cancel_action">Cancel</string>
     <string name="delete_list_item">DELETE</string>
+    <string name="spinner_arrow">Spinner Arrow</string>
+    <string name="select_product_category">Select Product Category</string>
+    <string name="default_unit_price">1.00</string>
 
     <string-array name="categories">
         <item>Baked Goods</item>

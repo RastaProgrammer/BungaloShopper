@@ -4,6 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    xmlns:tools="http://schemas.android.com/tools"
     android:background="@drawable/bottom_sheet"
     android:backgroundTint="@color/blue_dress"
     android:padding="8dp">
@@ -43,11 +44,14 @@
     <Spinner
         android:id="@+id/item_category_spn"
         android:layout_width="0dp"
-        android:layout_height="40dp"
+        android:layout_height="match_parent"
         android:layout_marginTop="8dp"
         android:background="@drawable/custom_spinner"
         android:overlapAnchor="false"
         android:textSize="18sp"
+        android:spinnerMode="dropdown"
+        android:popupBackground="@drawable/sl_container_rounded_bg"
+        tools:listitem="@layout/spinner_item_layout"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/item_name_txv" />
@@ -76,7 +80,7 @@
         android:layout_marginTop="8dp"
         android:autofillHints="0"
         android:background="@drawable/rounded_corner_rectangle"
-        android:hint="@string/default_quantity"
+        android:hint="@string/default_unit_price"
         android:inputType="numberDecimal"
         android:paddingStart="8dp"
         android:paddingEnd="0dp"

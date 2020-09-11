@@ -6,7 +6,6 @@
                 <shape>
                     <solid android:color="@color/milk_white" />
                     <corners android:radius="8dp" />
-                    <padding android:bottom="3dp" android:left="3dp" android:right="3dp" android:top="3dp" />
                 </shape>
             </item>
 
@@ -15,10 +14,10 @@
                 android:gravity="center_vertical|right"
                 android:bottom="6dp"
                 android:left="6dp"
-                android:right="6dp"
-                android:top="6dp"
-                android:width="12dp"
-                android:height="12dp"/>
+                android:right="12dp"
+                android:top="8dp"
+                android:width="16dp"
+                android:height="16dp"/>
         </layer-list>
     </item>
 </selector>

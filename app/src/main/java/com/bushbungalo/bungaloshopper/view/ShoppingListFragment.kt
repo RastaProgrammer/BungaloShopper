@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
+import com.bushbungalo.bungaloshopper.ui.CategoriesAdapter
 import com.bushbungalo.bungaloshopper.ui.MarginDividerItemDecoration
 import com.bushbungalo.bungaloshopper.ui.ShoppingListAdapter
 import com.bushbungalo.bungaloshopper.utils.Utils
@@ -426,10 +427,7 @@ class ShoppingListFragment : Fragment()
             .duration = 0
 
         val categories = resources.getStringArray(R.array.categories)
-
-        mCategoryAdapter = ArrayAdapter(context,
-            android.R.layout.simple_spinner_item, categories)
-
+        mCategoryAdapter = CategoriesAdapter(context, categories.toMutableList())
         mCategory.adapter = mCategoryAdapter
     }// end of function bindViewsToFragment
 

@@ -66,11 +66,11 @@
 
                 <ImageView
                     android:id="@+id/search_shopping_list_imv"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
                     android:layout_marginEnd="8dp"
                     android:contentDescription="@string/search_icon"
-                    android:src="@drawable/sl_search_200"
+                    android:src="@drawable/sl_search"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@+id/add_to_shopping_list_imv"
                     app:layout_constraintTop_toTopOf="parent"

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<selector xmlns:android="http://schemas.android.com/apk/res/android">
+<selector
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- disabled state -->
     <item android:drawable="@drawable/spinner_down_background"
         android:state_enabled="false"/>

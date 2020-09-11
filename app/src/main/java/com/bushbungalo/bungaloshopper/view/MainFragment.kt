@@ -22,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
+import com.bushbungalo.bungaloshopper.ui.CategoriesAdapter
 import com.bushbungalo.bungaloshopper.ui.DatesAdapter
 import com.bushbungalo.bungaloshopper.utils.Utils
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
@@ -178,24 +179,9 @@ class MainFragment : Fragment()
             .duration = 0
 
         val categories = resources.getStringArray(R.array.categories)
-        mCategoryAdapter = ArrayAdapter(
-            mContext, android.R.layout.simple_spinner_dropdown_item,
-            categories
-        )
-
-        mCategoryAdapter.setDropDownViewResource(R.layout.spinner_text_item)
-
+        mCategoryAdapter = CategoriesAdapter(mContext, categories.toMutableList())
         mCategory.adapter = mCategoryAdapter
 
-        mCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
-        {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View, pos: Int, id: Long) {
-                (parent?.getChildAt(0) as TextView).textSize = 18f
-                (parent.getChildAt(0) as TextView).typeface = BungaloShopperApp.currentFontNormal
-            }
-
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
-        }
     }// end of function bindViewsToFragment
 
     /**
@@ -210,8 +196,10 @@ class MainFragment : Fragment()
             { shoppingListsEntities ->
                 val noDuplicateDates = mutableListOf<Long>()
 
-                for (s in shoppingListsEntities) {
-                    if (!noDuplicateDates.contains(s.shoppingDate)) {
+                for (s in shoppingListsEntities)
+                {
+                    if (!noDuplicateDates.contains(s.shoppingDate))
+                    {
                         noDuplicateDates.add(s.shoppingDate)
                     }// end of if block
                 }// end of for range loop
