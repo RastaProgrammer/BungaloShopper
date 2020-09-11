@@ -5,7 +5,7 @@
     android:id="@+id/shopping_list_item_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp">
+    android:layout_marginBottom="8dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/item_crd"
@@ -47,7 +47,7 @@
                 android:layout_marginEnd="8dp"
                 android:text="@string/shopping_date"
                 android:textColor="@color/milk_white"
-                android:textSize="20sp"
+                android:textSize="18sp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 app:layout_constraintBottom_toBottomOf="parent"

@@ -23,7 +23,7 @@ interface ShoppingListDao
     fun deleteAll(): Int
 
     // Ensure that the list is ordered by product_category
-    @Query("SELECT * FROM shopping_list ORDER BY product_category ASC")
+    @Query("SELECT * FROM shopping_list ORDER BY product_category DESC")
     fun getAllShoppingLists(): LiveData<MutableList<ShoppingListItemEntity>>
 
     // Ensure that the list is ordered by product_category

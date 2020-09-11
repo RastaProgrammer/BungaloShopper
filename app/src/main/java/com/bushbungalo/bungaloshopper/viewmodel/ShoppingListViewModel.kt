@@ -12,14 +12,22 @@ class ShoppingListViewModel : ViewModel()
     private var mRepository: AppRepository = AppRepository.getInstance(BungaloShopperApp.shopperContext)
     lateinit var mShoppingList: LiveData<MutableList<ShoppingListItemEntity>>
 
+    /**
+     * Populates the database with sample data
+     */
     fun addSampleData()
     {
         mRepository.addSampleData()
-    }
+    }// end of function addSampleData
 
-    fun deleteAllShoppingLists() {
+    /**
+     * Removes all data from the database table
+     */
+    fun deleteAllShoppingLists()
+    {
         mRepository.deleteAllShoppingLists()
-    }
+    }// end of function deleteAllShoppingList
+
     /**
      * The product to be added to the shopping list
      *

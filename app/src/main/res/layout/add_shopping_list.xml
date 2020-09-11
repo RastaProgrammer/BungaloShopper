@@ -87,17 +87,31 @@
         app:layout_constraintTop_toBottomOf="@+id/item_quantity_txv" />
 
     <Button
-        android:id="@+id/add_Item"
+        android:id="@+id/cancel_btn"
         style="?android:attr/borderlessButtonStyle"
         android:layout_width="wrap_content"
-        android:layout_height="40dp"
+        android:layout_height="34dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="@drawable/rounded_square_empty_btn_bg"
+        android:text="@string/cancel_action"
+        android:textColor="@color/main_color"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toStartOf="@+id/add_item_btn"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/item_unit_price_txv" />
+
+    <Button
+        android:id="@+id/add_item_btn"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="34dp"
         android:layout_marginTop="8dp"
         android:background="@drawable/rounded_square_empty_btn_bg"
         android:text="@string/add_item"
         android:textColor="@color/main_color"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/item_unit_price_txv" />
 </androidx.constraintlayout.widget.ConstraintLayout>

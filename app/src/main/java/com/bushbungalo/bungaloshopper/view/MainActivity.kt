@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity(), ShoppingListView
 
     //endregion
 
+    //region Fragment Loading
     /**
      * Load the main fragment
      */
@@ -75,6 +76,8 @@ class MainActivity : AppCompatActivity(), ShoppingListView
             .replace(R.id.app_main_container_fl, shoppingListFragment,
                 "day list").commit()
     }// end of function loadShoppingListFragment
+
+    //endregion
 
     //region ShoppingListView Interface Implementations
     override fun insertAllShoppingLists(shoppingListItems: MutableList<ShoppingListItemEntity>)

@@ -54,6 +54,7 @@ class MainFragment : Fragment()
 
     // Main Bar
     private lateinit var imvAdd: ImageView
+    private lateinit var imvBill: ImageView
     private lateinit var imvSearch: ImageView
 
     // Search Bar
@@ -68,6 +69,7 @@ class MainFragment : Fragment()
     private lateinit var mItemQuantity: EditText
     private lateinit var mUnitPrice: EditText
     private lateinit var btnAddItem: Button
+    private lateinit var btnCancel: Button
 
     private lateinit var mAddSheet: View
     private lateinit var mCategoryAdapter: ArrayAdapter<String>
@@ -75,8 +77,6 @@ class MainFragment : Fragment()
     private var mPos = 0
 
     private lateinit var mContext: Context
-
-    //endregion
 
     companion object
     {
@@ -92,6 +92,8 @@ class MainFragment : Fragment()
         }// end of function newInstance
     }// end of companion object
 
+    //endregion
+
     //region Interface Implementations
     override fun onAttach(context: Context)
     {
@@ -99,13 +101,16 @@ class MainFragment : Fragment()
         listener = context as ShoppingListView
     }// end of function onAttach
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View?
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View?
     {
         super.onCreateView(inflater, container, savedInstanceState)
 
         viewFragment = inflater.inflate(
-            R.layout.shopping_list, container, false)
+            R.layout.shopping_list, container, false
+        )
 
         mContext = viewFragment.context
 
@@ -119,6 +124,7 @@ class MainFragment : Fragment()
 
         setViewListeners()
 
+        imvBill.visibility = View.GONE
         txvFragmentTitle.text = resources.getString(R.string.main_fragment_name)
 
         return viewFragment
@@ -132,23 +138,7 @@ class MainFragment : Fragment()
 
     //endregion
 
-    /**
-     * Add or updated an item on the shopping list
-     *
-     * @param shoppingItem The item to be added or updated
-     */
-    private fun createShoppingList(shoppingItem: ShoppingListItemEntity)
-    {
-       mShoppingListViewModel.addItem(shoppingItem)
-
-        mShoppingItem.setText("")
-        mCategory.setSelection(0)
-        mItemQuantity.setText("")
-        mUnitPrice.setText("")
-
-        // Hide the sheet
-        toggleAddItemSheet()
-    }// end of function createShoppingList
+    //region Setup
 
     /**
      * Bind the views that will be referenced
@@ -170,6 +160,7 @@ class MainFragment : Fragment()
         imvBack = viewFragment.findViewById(R.id.back_to_normal_imv)
         imvSearch = viewFragment.findViewById(R.id.search_shopping_list_imv)
         imvAdd = viewFragment.findViewById(R.id.add_to_shopping_list_imv)
+        imvBill = viewFragment.findViewById(R.id.bill_total_imv)
         imvClearFilter = viewFragment.findViewById(R.id.clear_filter_imv)
 
         mAddSheet = viewFragment.findViewById(R.id.add_item_layout)
@@ -177,7 +168,8 @@ class MainFragment : Fragment()
         mItemQuantity = viewFragment.findViewById(R.id.item_quantity_txv)
         mUnitPrice = viewFragment.findViewById(R.id.item_unit_price_txv)
 
-        btnAddItem = viewFragment.findViewById(R.id.add_Item)
+        btnAddItem = viewFragment.findViewById(R.id.add_item_btn)
+        btnCancel = viewFragment.findViewById(R.id.cancel_btn)
         mGoingShoppingDate = viewFragment.findViewById(R.id.going_shopping_on_txv)
 
         mAddSheet.animate()
@@ -187,11 +179,23 @@ class MainFragment : Fragment()
 
         val categories = resources.getStringArray(R.array.categories)
         mCategoryAdapter = ArrayAdapter(
-            mContext, android.R.layout.simple_spinner_item,
+            mContext, android.R.layout.simple_spinner_dropdown_item,
             categories
         )
 
+        mCategoryAdapter.setDropDownViewResource(R.layout.spinner_text_item)
+
         mCategory.adapter = mCategoryAdapter
+
+        mCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener
+        {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View, pos: Int, id: Long) {
+                (parent?.getChildAt(0) as TextView).textSize = 18f
+                (parent.getChildAt(0) as TextView).typeface = BungaloShopperApp.currentFontNormal
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }// end of function bindViewsToFragment
 
     /**
@@ -203,43 +207,28 @@ class MainFragment : Fragment()
         mTotalListViewModel.getAllShoppingList()
 
         mTotalListViewModel.mAllLists.observe(viewLifecycleOwner,
-       {
-           shoppingListsEntities->
-           val noDuplicateDates =  mutableListOf<ShoppingListItemEntity>()
+            { shoppingListsEntities ->
+                val noDuplicateDates = mutableListOf<Long>()
 
-           for(s in 0 until shoppingListsEntities.size)
-           {
-               if(noDuplicateDates.size > 0)
-               {
-                   for(l in 0 until noDuplicateDates.size)
-                   {
-                       if(shoppingListsEntities[s].shoppingDate != noDuplicateDates[l].shoppingDate)
-                       {
-                           noDuplicateDates.add(shoppingListsEntities[s])
-                       }// end of if block
-                   }// end of for range loop
-               }// end of if block
-               else
-               {
-                   noDuplicateDates.add(shoppingListsEntities[s])
-               }// end of else block
-           }// end of for range loop
+                for (s in shoppingListsEntities) {
+                    if (!noDuplicateDates.contains(s.shoppingDate)) {
+                        noDuplicateDates.add(s.shoppingDate)
+                    }// end of if block
+                }// end of for range loop
 
-           if(noDuplicateDates.size == 0)
-           {
-               noListLayout.visibility = View.VISIBLE
-               scvBodyScroller.visibility = View.INVISIBLE
-           }// end of if block
-           else
-           {
-               noListLayout.visibility = View.INVISIBLE
-               scvBodyScroller.visibility = View.VISIBLE
-           }// end of else block
+                if (noDuplicateDates.size == 0) {
+                    noListLayout.visibility = View.VISIBLE
+                    scvBodyScroller.visibility = View.INVISIBLE
+                }// end of if block
+                else {
+                    noListLayout.visibility = View.INVISIBLE
+                    scvBodyScroller.visibility = View.VISIBLE
+                }// end of else block
 
-            mAdapter = DatesAdapter(noDuplicateDates, listener)
-            rcvStoredShoppingLists.adapter = mAdapter
-            mAdapter.notifyDataSetChanged()
-        })
+                mAdapter = DatesAdapter(noDuplicateDates, listener)
+                rcvStoredShoppingLists.adapter = mAdapter
+                mAdapter.notifyDataSetChanged()
+            })
     }// end of function initObserver
 
     /**
@@ -266,20 +255,16 @@ class MainFragment : Fragment()
             toggleToolBarState()
         }
 
-        edtSearchQuery.addTextChangedListener(object : TextWatcher
-        {
+        edtSearchQuery.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable) {}
 
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
 
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int)
-            {
-                if(edtSearchQuery.text.isNotEmpty())
-                {
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                if (edtSearchQuery.text.isNotEmpty()) {
                     imvClearFilter.visibility = View.VISIBLE
                 }// end of if block
-                else
-                {
+                else {
                     imvClearFilter.visibility = View.INVISIBLE
                 }// end of if block
 
@@ -317,6 +302,13 @@ class MainFragment : Fragment()
             }// end of else block
         }
 
+        btnCancel.setOnClickListener {
+            toggleAddItemSheet()
+            mShoppingItem.setText("")
+            mCategory.setSelection(0)
+            mItemQuantity.setText("")
+            mUnitPrice.setText("")
+        }
         mGoingShoppingDate.setOnClickListener {
             showDateTimeDialog(mContext)
         }
@@ -325,6 +317,31 @@ class MainFragment : Fragment()
             toggleAddItemSheet()
         }
     }// end of function setViewListeners
+    //endregion
+
+    //region Database Actions
+
+    /**
+     * Add or updated an item on the shopping list
+     *
+     * @param shoppingItem The item to be added or updated
+     */
+    private fun createShoppingList(shoppingItem: ShoppingListItemEntity)
+    {
+        mShoppingListViewModel.addItem(shoppingItem)
+
+        mShoppingItem.setText("")
+        mCategory.setSelection(0)
+        mItemQuantity.setText("")
+        mUnitPrice.setText("")
+
+        // Hide the sheet
+        toggleAddItemSheet()
+    }// end of function createShoppingList
+
+    //endregion
+
+    //region AppBar functions
 
     /**
      * Set the state of the app bar
@@ -340,10 +357,8 @@ class MainFragment : Fragment()
             selectedListSearchAppBarLayout.animate()
                 .alpha(1f)
                 .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter()
-                {
-                    override fun onAnimationEnd(animation: Animator)
-                    {
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
                         selectedListSearchAppBarLayout.visibility = View.GONE
                         selectedListAppBarLayout.visibility = View.VISIBLE
                     }
@@ -364,10 +379,8 @@ class MainFragment : Fragment()
             selectedListAppBarLayout.animate()
                 .alpha(1f)
                 .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter()
-                {
-                    override fun onAnimationEnd(animation: Animator)
-                    {
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
                         selectedListAppBarLayout.visibility = View.GONE
                         selectedListSearchAppBarLayout.visibility = View.VISIBLE
                     }
@@ -422,6 +435,10 @@ class MainFragment : Fragment()
                 }
         }// end of else block
     }// end of function toggleAddItemSheet
+
+    //endregion
+
+    //region DateTimePicker Functions
 
     /**
      * Loads the dates that the date picker will contain usually a
@@ -691,4 +708,6 @@ class MainFragment : Fragment()
 
         handler.postDelayed(incrementWheel, 20)
     }// end of function animatePicker
+
+    //endregion
 }// end of class MainFragment

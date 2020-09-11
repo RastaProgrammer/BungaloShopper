@@ -15,6 +15,7 @@ import android.widget.TextView
 import com.bushbungalo.bungaloshopper.R
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp
 import java.io.File
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.regex.Matcher
@@ -27,6 +28,8 @@ object Utils
 {
     // Internal field
     private const val regex = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$"
+
+    const val HEADER_ITEM = "header"
 
     // Open fields
     val formatterWithTimeZone = SimpleDateFormat(
@@ -68,6 +71,12 @@ object Utils
         NIGHT
     }
 
+    enum class ItemViewType
+    {
+        HEADER,
+        ITEM
+    }
+
     const val hiddenColour: String = "#FFFFFF"
     const val visibleColour: String = "#808080"
 
@@ -85,7 +94,8 @@ object Utils
     {
         // convert color code into hex string and remove starting 2 digits
         val color = Integer.toHexString(colorCode).toUpperCase(
-            Locale.ROOT).substring(2)
+            Locale.ROOT
+        ).substring(2)
 
         if (opacityLevel < 100)
         {
@@ -106,11 +116,24 @@ object Utils
         // if color is empty or any other problem occurs then we return default color;
         return Color.parseColor(
             "#" + Integer.toHexString(
-               BungaloShopperApp.shopperContext.resources.getColor(
-                   R.color.colorAccent, null
-               )).toUpperCase(Locale.ROOT).substring(2)
+                BungaloShopperApp.shopperContext.resources.getColor(
+                    R.color.colorAccent, null
+                )
+            ).toUpperCase(Locale.ROOT).substring(2)
         )
     } // end of method addOpacity
+
+    /**
+     * Format a double to text formatted as currency
+     *
+     * @param money     The value to be converted
+     * @param locale    The locale in a specific country
+     */
+    fun convertToCurrency(money: Double, locale: Locale) : String
+    {
+        val format: NumberFormat = NumberFormat.getCurrencyInstance(locale)
+        return format.format(money)
+    }// end of function convertToCurrency
 
     /**
      * Determines the difference between two dates in days
@@ -148,10 +171,8 @@ object Utils
     {
         val r: Resources = context.resources
 
-        return TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP,
-            dps.toFloat(), r.displayMetrics
-        ).toInt()
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+            dps.toFloat(), r.displayMetrics).toInt()
     }// end of function devicePixelsToPixels
 
     /**

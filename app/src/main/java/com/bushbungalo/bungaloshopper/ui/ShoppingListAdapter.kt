@@ -1,10 +1,8 @@
 package com.bushbungalo.bungaloshopper.ui
 
-import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
-import android.view.*
-import android.widget.Button
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -13,18 +11,18 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
 import com.bushbungalo.bungaloshopper.utils.Utils
+import com.bushbungalo.bungaloshopper.utils.Utils.ItemViewType
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
-import com.bushbungalo.bungaloshopper.utils.Utils.zoomInView
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp
 import com.bushbungalo.bungaloshopper.view.ShoppingListFragment
-import com.bushbungalo.bungaloshopper.view.ShoppingListView
 import java.util.*
 
-class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListItemEntity>,
-                          private var fragment: ShoppingListFragment,
-                          private var mainListener: ShoppingListView):
-    RecyclerView.Adapter<ShoppingListAdapter.ShoppingListViewHolder>()
+class ShoppingListAdapter(
+    private var shoppingItems: MutableList<ShoppingListItemEntity>,
+    private var fragment: ShoppingListFragment)
+    : RecyclerView.Adapter<ShoppingListAdapter.ShoppingListViewHolder>()
 {
+    //region Field Declarations
     private lateinit var mLayout: View
 
     private lateinit var imvProductCategoryIcon: ImageView
@@ -39,15 +37,18 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
 
     private val shoppingListCopy = mutableListOf<ShoppingListItemEntity>()
 
-    init {
+    //endregion
+
+    init
+    {
         shoppingListCopy.addAll(shoppingItems)
-    }
+    }// end of init block
 
     inner class ShoppingListViewHolder(taskItem: View): RecyclerView.ViewHolder(taskItem)
     {
         fun bindShoppingList(shoppingItem: ShoppingListItemEntity)
         {
-            if(categoryChange)
+            if(shoppingItem.productName == Utils.HEADER_ITEM)
             {
                 when(shoppingItem.productCategory)
                 {
@@ -93,7 +94,6 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
                     ), android.graphics.PorterDuff.Mode.SRC_IN
                 )
                 txvProductCategoryName.text = Utils.toProperCase(shoppingItem.productCategory)
-                txvProductItem.text = shoppingItem.productName
             }// end of if block
             else
             {
@@ -107,16 +107,32 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
         categoryChange =
             mCurrentCategory.isNotEmpty() && mCurrentCategory != shoppingItems[viewType].productCategory
 
-        val shoppingListView: View = LayoutInflater.from(parent.context).inflate(
-            R.layout.selected_list_item, parent, false
-        )
+        val shoppingListView: View = when(viewType)
+        {
+            ItemViewType.HEADER.ordinal -> {
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.selected_list_category_header_item, parent, false
+                )
+            }
+
+            ItemViewType.HEADER.ordinal -> {
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.selected_list_item, parent, false
+                )
+            }
+            else -> {
+
+                LayoutInflater.from(parent.context).inflate(
+                    R.layout.selected_list_item, parent, false
+                )
+            }
+        }// end of when block
 
         val rootView: ViewGroup =
             shoppingListView.findViewById(R.id.shopping_list_item_layout)
 
         loadCustomFont(rootView)
 
-        mCategoryHeading = shoppingListView.findViewById(R.id.product_category_layout)
         mLayout = shoppingListView
 
         return ShoppingListViewHolder(shoppingListView)
@@ -134,49 +150,52 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
 
     override fun getItemViewType(position: Int): Int
     {
-        return position
+        return if(shoppingItems[position].productName == Utils.HEADER_ITEM)
+            ItemViewType.HEADER.ordinal else ItemViewType.ITEM.ordinal
     }// end of function getItemViewType
 
     override fun onBindViewHolder(holder: ShoppingListViewHolder, position: Int)
     {
-        imvProductCategoryIcon = holder.itemView.findViewById(R.id.category_icon_imv)
-        txvProductCategoryName = holder.itemView.findViewById(R.id.category_name_txv)
-        txvProductItem = holder.itemView.findViewById(R.id.item_name_txv)
-        imvEditIcon = holder.itemView.findViewById(R.id.edit_icon_imv)
-        imvRemoveIcon = holder.itemView.findViewById(R.id.remove_icon_imv)
-
-        val categoryBar: ConstraintLayout = holder.itemView.findViewById(R.id.product_category_layout)
-        val dimsParams: ViewGroup.LayoutParams = categoryBar.layoutParams
-        val marginParams = categoryBar.layoutParams as ViewGroup.MarginLayoutParams
-
-        if(mCurrentCategory == shoppingItems[position].productCategory)
+        if(shoppingItems[position].productName == Utils.HEADER_ITEM)
         {
-            dimsParams.height = 1   // Make the column header appear as a divider
-            marginParams.leftMargin =
-                Utils.devicePixelsToPixels(16, BungaloShopperApp.shopperContext)
-            categoryBar.requestLayout()
-            categoryChange = false
+            mCategoryHeading = holder.itemView.findViewById(R.id.product_category_layout)
+            imvProductCategoryIcon = holder.itemView.findViewById(R.id.category_icon_imv)
+            txvProductCategoryName = holder.itemView.findViewById(R.id.category_name_txv)
         }// end of if block
         else
         {
-            mCurrentCategory = shoppingItems[position].productCategory
-            categoryChange = true
-            dimsParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
-            marginParams.leftMargin = 0
-            categoryBar.requestLayout()
+            txvProductItem = holder.itemView.findViewById(R.id.item_name_txv)
+            imvEditIcon = holder.itemView.findViewById(R.id.edit_icon_imv)
+            imvRemoveIcon = holder.itemView.findViewById(R.id.remove_icon_imv)
+
+            imvEditIcon.setOnClickListener {
+                fragment.hideBillingSnackBar()
+                updateItem(shoppingItems[position])
+            }
+
+            mLayout.setOnClickListener {
+                fragment.hideBillingSnackBar()
+                updateItem(shoppingItems[position])
+            }
+
+            imvRemoveIcon.setOnClickListener {
+                fragment.removeItemPrompt(holder.itemView.context, shoppingItems[position])
+            }
         }// end of else block
 
         holder.bindShoppingList(shoppingItems[position])
 
-        imvEditIcon.setOnClickListener {
-            updateItem(shoppingItems[position])
-        }
-
-        imvRemoveIcon.setOnClickListener {
-            removeItemPrompt(holder.itemView.context, shoppingItems[position])
-        }
+        if(position == itemCount - 1 && !fragment.mFiltering )
+        {
+            fragment.calculateBillTotal()
+        }// end of if block
     }// end of function onBindViewHolder
 
+    /**
+     * Filters the [RecyclerView] using a [String]
+     *
+     * @param filterBy The [String] that the list should be filtered by
+     */
     fun filterItems(filterBy: String)
     {
         shoppingItems.clear()
@@ -187,11 +206,31 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
         }// end of if block
         else
         {
+            val previousCategories = mutableListOf<String>()
+
             for (item in shoppingListCopy)
             {
                 if (item.productName.toLowerCase(Locale.ROOT).contains(filterBy))
                 {
-                    shoppingItems.add(item)
+                    if(item.productName != Utils.HEADER_ITEM)
+                    {
+                        if(!previousCategories.contains(item.productCategory))
+                        {
+                            shoppingItems.add(
+                                ShoppingListItemEntity(
+                                    id = 0,
+                                    shoppingListId = "",
+                                    productName = Utils.HEADER_ITEM,
+                                    productCategory = item.productCategory,
+                                    productQuantity = 0,
+                                    unitPrice = 0.0,
+                                    shoppingDate = item.shoppingDate
+                                ))
+                        }
+
+                        shoppingItems.add(item)
+                        previousCategories.add(item.productCategory)
+                    }
                 }// end of if block
             }// end of range for loop
         }// end of else block
@@ -200,49 +239,11 @@ class ShoppingListAdapter(private var shoppingItems: MutableList<ShoppingListIte
         notifyDataSetChanged()
     }// end of function filterItems
 
-    private fun removeItemPrompt(context: Context, item: ShoppingListItemEntity)
-    {
-        val updateListPromptDialogView =
-            View.inflate(context, R.layout.remove_item_prompt_layout, null)
-        val updateListPromptDialog: android.app.AlertDialog = android.app.AlertDialog.Builder(context).create()
-        val txvRemoveItem: TextView = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_txv)
-        val btnYes: Button = updateListPromptDialogView.findViewById(R.id.remove_item_btn)
-        val btnNo: Button = updateListPromptDialogView.findViewById(R.id.forget_removing_btn)
-        val rootView: ViewGroup = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_root)
-
-        loadCustomFont(rootView)
-
-        val prompt = "Do you wish to remove ${item.productName} from the list?"
-        txvRemoveItem.text = prompt
-
-        btnYes.setOnClickListener {
-            updateListPromptDialog.dismiss()
-
-            removeItem(item)
-        }
-
-        btnNo.setOnClickListener {
-            updateListPromptDialog.dismiss()
-        }
-
-        updateListPromptDialog.setView(updateListPromptDialogView)
-        updateListPromptDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        updateListPromptDialog.setCancelable(false)
-        updateListPromptDialog.show()
-
-        // Adjust the layout after the window is displayed
-        val dialogWindow: Window = updateListPromptDialog.window!!
-
-        dialogWindow.setLayout(980,ViewGroup.LayoutParams.WRAP_CONTENT)
-        dialogWindow.setGravity(Gravity.CENTER)
-        zoomInView(updateListPromptDialogView)
-    }// end of function removeItemPrompt
-
-    private fun removeItem(item: ShoppingListItemEntity)
-    {
-        mainListener.deleteShoppingListItem(item)
-    }// end of function removeItem
-
+    /**
+     * Allows the user to update an item in the database
+     *
+     * @param item  The item that should be updated in the list
+     */
     private fun updateItem(item: ShoppingListItemEntity)
     {
         fragment.updateId = item.id

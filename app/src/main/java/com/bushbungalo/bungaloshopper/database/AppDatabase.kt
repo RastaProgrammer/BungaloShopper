@@ -20,6 +20,8 @@ abstract class AppDatabase : RoomDatabase()
 
         /**
          * Returns an instance of a [AppDatabase] object
+         *
+         * @param context A valid application or activity context
          */
         fun getInstance(context: Context): AppDatabase
         {
@@ -34,5 +36,5 @@ abstract class AppDatabase : RoomDatabase()
                 return instance
             }// end of synchronized block
         }// end of function getInstance
-    }
+    }// end of companion object
 }// end of class AppDatabase

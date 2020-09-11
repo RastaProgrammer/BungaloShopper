@@ -9,7 +9,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
-import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
 import com.bushbungalo.bungaloshopper.utils.Utils
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.utils.Utils.longDayAndMonthDate
@@ -17,30 +16,43 @@ import com.bushbungalo.bungaloshopper.view.MainActivity
 import com.bushbungalo.bungaloshopper.view.ShoppingListView
 import java.util.*
 
-class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity>,
+class DatesAdapter(private var shoppingDates: MutableList<Long>,
                    private var mainListener: ShoppingListView):
     RecyclerView.Adapter<DatesAdapter.ShoppingListViewHolder>()
 {
+    //region Declarations
     private lateinit var mLayout: View
     private lateinit var txvShoppingDate: TextView
     private lateinit var imvRemoveList: ImageView
 
-    private val shoppingDatesCopy = mutableListOf<ShoppingListItemEntity>()
+    private val shoppingDatesCopy = mutableListOf<Long>()
 
-    init {
+    //endregion
+
+    //region Field Initialization
+
+    init
+    {
         shoppingDatesCopy.addAll(shoppingDates)
-    }
+    }// end of init block
 
+    //endregion
+
+    //region Inner class binding
     inner class ShoppingListViewHolder(shoppingData: View): RecyclerView.ViewHolder(shoppingData)
     {
-        fun bindShoppingDate(shoppingDate: ShoppingListItemEntity)
+        fun bindShoppingDate(shoppingDate: Long)
         {
-            val shopDay = Date(shoppingDate.shoppingDate.toString().toLong())
+            val shopDay = Date(shoppingDate)
             val day = longDayAndMonthDate.format(shopDay)
 
             txvShoppingDate.text = day
         }// end of function bindShoppingDate
     }// end of inner class ShoppingListViewHolder
+
+    //endregion
+
+    //region Main Interface Implementations
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShoppingListViewHolder
     {
@@ -81,16 +93,25 @@ class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity
         holder.bindShoppingDate(shoppingDates[position])
 
         mLayout.setOnClickListener {
-            (mainListener as MainActivity).mSelectedShoppingList = shoppingDates[position].shoppingDate
+            (mainListener as MainActivity).mSelectedShoppingList = shoppingDates[position]
             (mainListener as MainActivity).loadShoppingListFragment()
-            mainListener.getListByDate(shoppingDates[position].shoppingDate)
+            mainListener.getListByDate(shoppingDates[position])
         }
 
         imvRemoveList.setOnClickListener {
-            removeItemPrompt(holder.itemView.context, shoppingDates[position].shoppingDate)
+            removeItemPrompt(holder.itemView.context, shoppingDates[position])
         }
     }// end of function onBindViewHolder
 
+    //endregion
+
+    //region Action functions
+
+    /**
+     * Allows the list to be filtered using a specific string
+     *
+     * @param filterBy  The string in which the list should be filtered by
+     */
     fun filterItems(filterBy: String)
     {
         shoppingDates.clear()
@@ -103,7 +124,7 @@ class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity
         {
             for (item in shoppingDatesCopy)
             {
-                val shopDay = Date(item.shoppingDate)
+                val shopDay = Date(item)
                 val day = longDayAndMonthDate.format(shopDay)
 
                 if (day.toLowerCase(Locale.ROOT).contains(filterBy))
@@ -116,6 +137,12 @@ class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity
         notifyDataSetChanged()
     }// end of function filterItems
 
+    /**
+     * Prompts the user before an item is removed from the list
+     *
+     * @param context   A valid view context
+     * @param date  The date in which all items on the list belong to
+     */
     private fun removeItemPrompt(context: Context, date: Long)
     {
         val updateListPromptDialogView =
@@ -130,7 +157,7 @@ class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity
 
         val shoppingDate = longDayAndMonthDate.format(date)
 
-        val prompt = "Do you wish to the shopping list for $shoppingDate from the database?"
+        val prompt = "Do you wish to remove the shopping list for $shoppingDate from the database?"
         txvRemoveItem.text = prompt
 
         btnYes.setOnClickListener {
@@ -156,8 +183,16 @@ class DatesAdapter(private var shoppingDates: MutableList<ShoppingListItemEntity
         Utils.zoomInView(updateListPromptDialogView)
     }// end of function removeItemPrompt
 
+    /**
+     * Initiates the removal of an item from the list
+     *
+     * @param date The date in which all items on the list belong to
+     */
     private fun removeItem(date: Long)
     {
         mainListener.deleteShoppingList(date)
     }// end of function removeItem
+
+    //endregion
+
 }// end of class DatesAdapter

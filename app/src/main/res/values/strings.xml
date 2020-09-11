@@ -30,6 +30,8 @@
     <string name="date_calendar">Date Calendar</string>
     <string name="update_item">Update</string>
     <string name="no_shopping_lists">Empty Basket</string>
+    <string name="cancel_action">Cancel</string>
+    <string name="delete_list_item">DELETE</string>
 
     <string-array name="categories">
         <item>Baked Goods</item>
