@@ -1,5 +1,5 @@
 # BungaloShopper
-This application was designed to create a simple shopping list to assist on visits to the store. The application uses the Room Database and LiveData.
+This application was designed to create a simple shopping list to assist on visits to the store. The application uses components from the Android Jetpack libraries such as: Room Database, LiveData, Navigation, SafeArgs and ViewBinding.
 
 ## Initial Launch
 The application opens with an empty list which will be updated as shopping lists are created. 
@@ -42,9 +42,16 @@ You can also remove a day's shopping list all together from the main list.
 
 ## Gradle Dependency
 
-The following `dependencies` should be added to the **build.gradle** app file:
+The following `dependencies` and `plugins` should be added to the **build.gradle** app file:
 
 ```groovy
+   apply plugin: 'kotlin-kapt'
+   apply plugin: 'androidx.navigation.safeargs.kotlin'
+   
+   buildFeatures{
+        viewBinding true
+    }
+
     // ViewModel
     implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
 
@@ -58,7 +65,20 @@ The following `dependencies` should be added to the **build.gradle** app file:
     // Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    
+     // Navigation
+    implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
+    implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
 ```
+
+The following `dependency` should be added to the **build.gradle** project file:
+
+```groovy
+    dependencies {
+        classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version"
+    }
+```
+
 
 ## License
 
