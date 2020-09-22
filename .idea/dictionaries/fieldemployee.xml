@@ -2,7 +2,10 @@
   <dictionary name="fieldemployee">
     <words>
       <w>bungalo</w>
+      <w>bungaloshopper</w>
+      <w>bushbungalo</w>
       <w>meridiem</w>
+      <w>snackbar</w>
     </words>
   </dictionary>
 </component>

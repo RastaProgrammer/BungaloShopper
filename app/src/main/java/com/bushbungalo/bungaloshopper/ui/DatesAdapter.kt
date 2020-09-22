@@ -1,30 +1,25 @@
 package com.bushbungalo.bungaloshopper.ui
 
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.*
-import android.widget.Button
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
+import com.bushbungalo.bungaloshopper.databinding.MainFragmentListItemBinding
+import com.bushbungalo.bungaloshopper.databinding.RemoveItemPromptLayoutBinding
 import com.bushbungalo.bungaloshopper.utils.Utils
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.utils.Utils.longDayAndMonthDate
-import com.bushbungalo.bungaloshopper.view.MainActivity
-import com.bushbungalo.bungaloshopper.view.ShoppingListView
+import kotlinx.android.synthetic.main.main_fragment_list_item.view.*
 import java.util.*
 
 class DatesAdapter(private var shoppingDates: MutableList<Long>,
-                   private var mainListener: ShoppingListView):
+                   private var fragmentListener: ListItemListener):
     RecyclerView.Adapter<DatesAdapter.ShoppingListViewHolder>()
 {
     //region Declarations
-    private lateinit var mLayout: View
-    private lateinit var txvShoppingDate: TextView
-    private lateinit var imvRemoveList: ImageView
-
     private val shoppingDatesCopy = mutableListOf<Long>()
 
     //endregion
@@ -39,14 +34,16 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
     //endregion
 
     //region Inner class binding
-    inner class ShoppingListViewHolder(shoppingData: View): RecyclerView.ViewHolder(shoppingData)
+    inner class ShoppingListViewHolder(shoppingDataView: View): RecyclerView.ViewHolder(shoppingDataView)
     {
+        val binding = MainFragmentListItemBinding.bind(shoppingDataView)
+
         fun bindShoppingDate(shoppingDate: Long)
         {
             val shopDay = Date(shoppingDate)
             val day = longDayAndMonthDate.format(shopDay)
 
-            txvShoppingDate.text = day
+            binding.itemCrd.item_inner_layout.shopping_date_txv.text = day
         }// end of function bindShoppingDate
     }// end of inner class ShoppingListViewHolder
 
@@ -57,7 +54,7 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShoppingListViewHolder
     {
         val shoppingListView: View = LayoutInflater.from(parent.context).inflate(
-            R.layout.shopping_list_item, parent, false
+            R.layout.main_fragment_list_item, parent, false
         )
 
         val rootView: ViewGroup =
@@ -65,15 +62,10 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
 
         loadCustomFont(rootView)
 
-        mLayout = shoppingListView
-
         return ShoppingListViewHolder(shoppingListView)
     }// end of function onCreateViewHolder
 
-    override fun getItemCount(): Int
-    {
-        return shoppingDates.size
-    }// end of function getItemCount
+    override fun getItemCount() = shoppingDates.size
 
     override fun getItemId(position: Int): Long
     {
@@ -87,19 +79,17 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
 
     override fun onBindViewHolder(holder: ShoppingListViewHolder, position: Int)
     {
-        txvShoppingDate = holder.itemView.findViewById(R.id.shopping_date_txv)
-        imvRemoveList = holder.itemView.findViewById(R.id.remove_shopping_list_icon_imv)
-
         holder.bindShoppingDate(shoppingDates[position])
 
-        mLayout.setOnClickListener {
-            (mainListener as MainActivity).mSelectedShoppingList = shoppingDates[position]
-            (mainListener as MainActivity).loadShoppingListFragment()
-            mainListener.getListByDate(shoppingDates[position])
-        }
+        with(holder.binding)
+        {
+            root.setOnClickListener {
+                fragmentListener.onItemClick(shoppingDates[position])
+            }
 
-        imvRemoveList.setOnClickListener {
-            removeItemPrompt(holder.itemView.context, shoppingDates[position])
+            removeShoppingListIconImv.setOnClickListener {
+                removeItemPrompt(holder.itemView.context, shoppingDates[position])
+            }
         }
     }// end of function onBindViewHolder
 
@@ -147,26 +137,24 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
     {
         val updateListPromptDialogView =
             View.inflate(context, R.layout.remove_item_prompt_layout, null)
-        val updateListPromptDialog: android.app.AlertDialog = android.app.AlertDialog.Builder(context).create()
-        val txvRemoveItem: TextView = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_txv)
-        val btnYes: Button = updateListPromptDialogView.findViewById(R.id.remove_item_btn)
-        val btnNo: Button = updateListPromptDialogView.findViewById(R.id.forget_removing_btn)
-        val rootView: ViewGroup = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_root)
 
-        loadCustomFont(rootView)
+        val promptBinding = RemoveItemPromptLayoutBinding.bind(updateListPromptDialogView)
+        val updateListPromptDialog: AlertDialog = AlertDialog.Builder(context).create()
+
+        loadCustomFont(promptBinding.removeItemPromptRoot)
 
         val shoppingDate = longDayAndMonthDate.format(date)
-
         val prompt = "Do you wish to remove the shopping list for $shoppingDate from the database?"
-        txvRemoveItem.text = prompt
 
-        btnYes.setOnClickListener {
+        promptBinding.removeItemPromptTxv.text = prompt
+
+        promptBinding.removeItemBtn.setOnClickListener {
             updateListPromptDialog.dismiss()
 
             removeItem(date)
         }
 
-        btnNo.setOnClickListener {
+        promptBinding.forgetRemovingBtn.setOnClickListener {
             updateListPromptDialog.dismiss()
         }
 
@@ -190,9 +178,18 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
      */
     private fun removeItem(date: Long)
     {
-        mainListener.deleteShoppingList(date)
+        fragmentListener.deleteShoppingList(date)
     }// end of function removeItem
 
     //endregion
 
+    //region Adapter Interface
+
+    interface ListItemListener
+    {
+        fun onItemClick(date: Long)
+
+        fun deleteShoppingList(date: Long)
+    }// end of interface ListItemListener
+    //endregion
 }// end of class DatesAdapter

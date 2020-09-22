@@ -7,7 +7,7 @@ import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
 @Dao
 interface ShoppingListDao
 {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertAllShoppingLists(shoppingListItems: MutableList<ShoppingListItemEntity>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

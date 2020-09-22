@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@+id/main_fragment">
+
+    <fragment
+        android:id="@+id/main_fragment"
+        android:name="com.bushbungalo.bungaloshopper.view.MainFragment"
+        android:label="@string/main_fragment_name"
+        tools:layout="@layout/main_fragment" >
+        <action
+            android:id="@+id/action_view_shopping_list"
+            app:destination="@id/day_list_fragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/day_list_fragment"
+        android:name="com.bushbungalo.bungaloshopper.view.ShoppingListFragment"
+        android:label="@string/shopping_list_name"
+        tools:layout="@layout/day_shopping_list_fragment" >
+        <argument
+            android:name="date"
+            app:argType="long"
+            android:defaultValue="0L" />
+    </fragment>
+</navigation>

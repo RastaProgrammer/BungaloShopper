@@ -15,120 +15,98 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
-import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.NumberPicker
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
+import com.bushbungalo.bungaloshopper.databinding.MainFragmentBinding
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
 import com.bushbungalo.bungaloshopper.ui.CategoriesAdapter
 import com.bushbungalo.bungaloshopper.ui.DatesAdapter
-import com.bushbungalo.bungaloshopper.utils.Utils
+import com.bushbungalo.bungaloshopper.utils.*
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp.Companion.mShoppingListViewModel
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp.Companion.mTotalListViewModel
+import kotlinx.android.synthetic.main.main_fragment.view.*
+import kotlinx.android.synthetic.main.main_fragment_search_bar.view.*
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
 
-class MainFragment : Fragment()
+class MainFragment : Fragment(), DatesAdapter.ListItemListener
 {
     //region Declarations
+    private lateinit var binding: MainFragmentBinding
     private lateinit var listener: ShoppingListView
-    private lateinit var txvFragmentTitle: TextView
-    private lateinit var txvListDescription: TextView
-    private lateinit var rcvStoredShoppingLists: RecyclerView
-    private lateinit var noListLayout: ConstraintLayout
-    private lateinit var scvBodyScroller: ScrollView
 
     private lateinit var mLinearLayoutManager: LinearLayoutManager
     private lateinit var mAdapter: DatesAdapter
 
-    private lateinit var viewFragment: View
-
     private var mAppBarState = 0
-    private lateinit var selectedListAppBarLayout: ConstraintLayout
-    private lateinit var selectedListSearchAppBarLayout: ConstraintLayout
-
-    // Main Bar
-    private lateinit var imvAdd: ImageView
-    private lateinit var imvBill: ImageView
-    private lateinit var imvSearch: ImageView
-
-    // Search Bar
-    private lateinit var edtSearchQuery: EditText
-    private lateinit var imvBack: ImageView
-    private lateinit var imvClearFilter: ImageView
-
-    // Add Item Sheet
-    private lateinit var mGoingShoppingDate: TextView
-    private lateinit var mShoppingItem: EditText
-    private lateinit var mCategory: Spinner
-    private lateinit var mItemQuantity: EditText
-    private lateinit var mUnitPrice: EditText
-    private lateinit var btnAddItem: Button
-    private lateinit var btnCancel: Button
-
-    private lateinit var mAddSheet: View
     private lateinit var mCategoryAdapter: ArrayAdapter<String>
-
     private var mPos = 0
-
-    private lateinit var mContext: Context
 
     companion object
     {
-        private var mInstance = MainFragment()
-
         // App Bar
         private const val STANDARD_APPBAR: Int = 0
         private const val SEARCH_APPBAR = 1
 
-        fun newInstance(): MainFragment
-        {
-            return mInstance
-        }// end of function newInstance
+        // Add Sheet
+        private const val APP_SHEET_DOWN_POSITION = 0
+        private const val APP_SHEET_UP_POSITION = 1
     }// end of companion object
 
     //endregion
 
     //region Interface Implementations
-    override fun onAttach(context: Context)
-    {
-        super.onAttach(context)
-        listener = context as ShoppingListView
-    }// end of function onAttach
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View?
-    {
-        super.onCreateView(inflater, container, savedInstanceState)
+    ): View? {
 
-        viewFragment = inflater.inflate(
-            R.layout.shopping_list, container, false
-        )
+        binding = MainFragmentBinding.inflate(inflater, container, false)
+        val categories = resources.getStringArray(R.array.categories)
+        mCategoryAdapter = CategoriesAdapter(binding.root.context, categories.toMutableList())
+        binding.addItemLayout.itemCategorySpn.adapter = mCategoryAdapter
 
-        mContext = viewFragment.context
-
-        val rootView: ViewGroup = viewFragment.findViewById(R.id.all_shopping_lists_layout)
-
-        bindViewsToFragment()
-
-        loadCustomFont(rootView)
+        loadCustomFont(binding.root)
 
         initRecyclerView()
 
+        initObserver(savedInstanceState)
+
         setViewListeners()
+        
+        binding.mainToolBarLayout.billTotalImv.visibility = View.GONE
+        binding.mainToolBarLayout.searchToolbarTitleTxv.text = resources.getString(R.string.main_fragment_name)
 
-        imvBill.visibility = View.GONE
-        txvFragmentTitle.text = resources.getString(R.string.main_fragment_name)
-
-        return viewFragment
+        requireActivity().onBackPressedDispatcher.addCallback (
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true)
+            {
+                override fun handleOnBackPressed()
+                {
+                    if(mAppBarState != STANDARD_APPBAR)
+                    {
+                        toggleToolBarState()
+                    }// end of if block
+                    else
+                    {
+                        listener.exitApp()
+                    }// end of else block
+                }
+            }
+        )
+        return binding.root
     }// end of function onCreate
 
     override fun onResume()
@@ -137,57 +115,52 @@ class MainFragment : Fragment()
         setAppBarState(STANDARD_APPBAR)
     }// end of function onResume
 
+    override fun onStart()
+    {
+        super.onStart()
+
+        listener = activity as MainActivity
+        binding.addItemLayout.root.animate()
+            .translationYBy(0f)
+            .translationY(1000f)
+            .duration = 0
+    }// end of function onStart
+
+    override fun onSaveInstanceState(outState: Bundle)
+    {
+        if(::binding.isInitialized)
+        {
+            with(binding.searchToolBarLayout.searchToolbarSearchEdt)
+            {
+                outState.putString(SEARCH_QUERY, text.toString())
+                outState.putInt(SEARCH_CURSOR_POSITION, selectionStart)
+            }// end of with block
+
+            outState.putInt(APP_BAR_STATE, mAppBarState)
+
+            with(binding.addItemLayout)
+            {
+                outState.putString(SHOPPING_DATE, goingShoppingOnTxv.text.toString())
+                outState.putString(PRODUCT_NAME, itemNameTxv.text.toString())
+                outState.putString(PRODUCT_CATEGORY, itemCategorySpn.selectedItem.toString())
+                outState.putString(PRODUCT_QUANTITY, itemQuantityTxv.text.toString())
+                outState.putString(PRODUCT_UNIT_PRICE, itemUnitPriceTxv.text.toString())
+            }// end of when block
+
+            outState.putInt(ADD_SHEET_POSITION, mPos)
+        }// end of if block
+
+        super.onSaveInstanceState(outState)
+    }// end of function onSaveInstanceState
+
     //endregion
 
     //region Setup
 
     /**
-     * Bind the views that will be referenced
-     *
-     */
-    private fun bindViewsToFragment()
-    {
-        txvFragmentTitle = viewFragment.findViewById(R.id.search_toolbar_title_txv)
-        txvListDescription = viewFragment.findViewById(R.id.shopping_lists_txv)
-        rcvStoredShoppingLists = viewFragment.findViewById(R.id.stored_lists_rcv)
-        scvBodyScroller = viewFragment.findViewById(R.id.daily_lists_body_scroller)
-        noListLayout = viewFragment.findViewById(R.id.no_lists_layout)
-        mCategory = viewFragment.findViewById(R.id.item_category_spn)
-
-        selectedListAppBarLayout = viewFragment.findViewById(R.id.main_tool_bar_layout)
-        selectedListSearchAppBarLayout = viewFragment.findViewById(R.id.search_tool_bar_layout)
-
-        edtSearchQuery = viewFragment.findViewById(R.id.search_toolbar_search_edt)
-        imvBack = viewFragment.findViewById(R.id.back_to_normal_imv)
-        imvSearch = viewFragment.findViewById(R.id.search_shopping_list_imv)
-        imvAdd = viewFragment.findViewById(R.id.add_to_shopping_list_imv)
-        imvBill = viewFragment.findViewById(R.id.bill_total_imv)
-        imvClearFilter = viewFragment.findViewById(R.id.clear_filter_imv)
-
-        mAddSheet = viewFragment.findViewById(R.id.add_item_layout)
-        mShoppingItem = viewFragment.findViewById(R.id.item_name_txv)
-        mItemQuantity = viewFragment.findViewById(R.id.item_quantity_txv)
-        mUnitPrice = viewFragment.findViewById(R.id.item_unit_price_txv)
-
-        btnAddItem = viewFragment.findViewById(R.id.add_item_btn)
-        btnCancel = viewFragment.findViewById(R.id.cancel_btn)
-        mGoingShoppingDate = viewFragment.findViewById(R.id.going_shopping_on_txv)
-
-        mAddSheet.animate()
-            .translationYBy(0f)
-            .translationY(1000f)
-            .duration = 0
-
-        val categories = resources.getStringArray(R.array.categories)
-        mCategoryAdapter = CategoriesAdapter(mContext, categories.toMutableList())
-        mCategory.adapter = mCategoryAdapter
-
-    }// end of function bindViewsToFragment
-
-    /**
      * Initialize the observers
      */
-    private fun initObserver()
+    private fun initObserver(savedInstanceState: Bundle?)
     {
         mTotalListViewModel.initializeAllShoppingLists()
         mTotalListViewModel.getAllShoppingList()
@@ -204,18 +177,56 @@ class MainFragment : Fragment()
                     }// end of if block
                 }// end of for range loop
 
-                if (noDuplicateDates.size == 0) {
-                    noListLayout.visibility = View.VISIBLE
-                    scvBodyScroller.visibility = View.INVISIBLE
+                if (noDuplicateDates.size == 0)
+                {
+                    binding.noListsLayout.visibility = View.VISIBLE
+                    binding.dailyListsBodyScroller.visibility = View.INVISIBLE
                 }// end of if block
-                else {
-                    noListLayout.visibility = View.INVISIBLE
-                    scvBodyScroller.visibility = View.VISIBLE
+                else
+                {
+                    binding.noListsLayout.visibility = View.INVISIBLE
+                    binding.dailyListsBodyScroller.visibility = View.VISIBLE
                 }// end of else block
 
-                mAdapter = DatesAdapter(noDuplicateDates, listener)
-                rcvStoredShoppingLists.adapter = mAdapter
+                mAdapter = DatesAdapter(noDuplicateDates, this@MainFragment)
+                binding.storedListsRcv.adapter = mAdapter
                 mAdapter.notifyDataSetChanged()
+
+                if(savedInstanceState != null)
+                {
+                    val previousAppBarState = savedInstanceState.getInt(APP_BAR_STATE)
+                    val previousSheetPosition = savedInstanceState.getInt(ADD_SHEET_POSITION)
+
+                    val queryString: String? = savedInstanceState.getString(SEARCH_QUERY)
+                    val cursorPosition: Int = savedInstanceState.getInt(SEARCH_CURSOR_POSITION)
+
+                    if(previousAppBarState == SEARCH_APPBAR)
+                    {
+                        toggleToolBarState()
+
+                        if(queryString != null)
+                        {
+                            binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility = View.VISIBLE
+                            binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.GONE
+                            binding.searchToolBarLayout.searchToolbarSearchEdt.setText(
+                                queryString)
+                            binding.searchToolBarLayout.searchToolbarSearchEdt.setSelection(cursorPosition)
+                        }// end of if block
+                    }// end of else block
+
+                    if(previousSheetPosition == APP_SHEET_UP_POSITION)
+                    {
+                        binding.addItemLayout.goingShoppingOnTxv.text = savedInstanceState.getString(SHOPPING_DATE)
+                        binding.addItemLayout.itemNameTxv.setText(savedInstanceState.getString(PRODUCT_NAME))
+                        binding.addItemLayout.itemCategorySpn.setSelection(mCategoryAdapter.getPosition(
+                            savedInstanceState.getString(PRODUCT_CATEGORY)))
+                        binding.addItemLayout.itemQuantityTxv.setText(savedInstanceState.getString(PRODUCT_QUANTITY))
+                        binding.addItemLayout.itemUnitPriceTxv.setText(savedInstanceState.getString(PRODUCT_UNIT_PRICE))
+                        binding.addItemLayout.itemNameTxv.setSelection(binding.addItemLayout.itemNameTxv.text.length)
+
+                        toggleAddItemSheet()
+                    }// end of if block
+                }// end of if block
             })
     }// end of function initObserver
 
@@ -225,9 +236,12 @@ class MainFragment : Fragment()
     private fun initRecyclerView()
     {
         mLinearLayoutManager = LinearLayoutManager(context)
-        rcvStoredShoppingLists.setHasFixedSize(true)
-        rcvStoredShoppingLists.layoutManager = mLinearLayoutManager
-        initObserver()
+
+        with(binding.storedListsRcv)
+        {
+            setHasFixedSize(true)
+            layoutManager = mLinearLayoutManager
+        }
     }// end of function initRecyclerView
 
     /**
@@ -235,75 +249,91 @@ class MainFragment : Fragment()
      */
     private fun setViewListeners()
     {
-        imvSearch.setOnClickListener {
+        // Main Toolbar
+        binding.mainToolBarLayout.searchShoppingListImv.setOnClickListener {
             toggleToolBarState()
         }
 
-        imvBack.setOnClickListener {
+        binding.mainToolBarLayout.addToShoppingListImv.setOnClickListener {
+            toggleAddItemSheet()
+        }// end of imvAdd.setOnClickListener block
+
+        // Search Toolbar
+        binding.searchToolBarLayout.backToNormalImv.setOnClickListener {
             toggleToolBarState()
         }
 
-        edtSearchQuery.addTextChangedListener(object : TextWatcher {
+        binding.searchToolBarLayout.searchToolbarSearchEdt.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable) {}
 
             override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
 
             override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (edtSearchQuery.text.isNotEmpty()) {
-                    imvClearFilter.visibility = View.VISIBLE
+                if (binding.searchToolBarLayout.searchToolbarSearchEdt.text.isNotEmpty()) {
+                    binding.searchToolBarLayout.clearFilterImv.visibility = View.VISIBLE
                 }// end of if block
                 else {
-                    imvClearFilter.visibility = View.INVISIBLE
+                    binding.searchToolBarLayout.clearFilterImv.visibility = View.INVISIBLE
                 }// end of if block
 
-                mAdapter.filterItems(edtSearchQuery.text.toString())
+                if (::mAdapter.isInitialized) {
+                    mAdapter.filterItems(binding.searchToolBarLayout.searchToolbarSearchEdt.text.toString())
+                }
             }
         })
 
-        imvClearFilter.setOnClickListener{
-            edtSearchQuery.setText("")
+        binding.searchToolBarLayout.clearFilterImv.setOnClickListener {
+            binding.searchToolBarLayout.searchToolbarSearchEdt.setText("")
         }
 
-        btnAddItem.setOnClickListener {
+        // Add Item Sheet
+        binding.addItemLayout.addItemBtn.setOnClickListener {
             val itemId = "bs${SimpleDateFormat("HHmmssSSS", Locale.ENGLISH).format(Date())}"
-            val shoppingDate = Utils.longDayAndMonthDate.parse(mGoingShoppingDate.text.toString())
+            val shoppingDate = Utils.longDayAndMonthDate.parse(binding.addItemLayout.goingShoppingOnTxv.text.toString())
 
-            val newItem = ShoppingListItemEntity(
-                0,
-                itemId,
-                Utils.toProperCase(mShoppingItem.text.toString()),
-                mCategory.selectedItem.toString(),
-                if (mItemQuantity.text.toString().isNotEmpty()) mItemQuantity.text.toString()
-                    .toInt() else 1,
-                if (mUnitPrice.text.toString().isNotEmpty()) mUnitPrice.text.toString()
-                    .toDouble() else 0.0,
-                shoppingDate!!.time
-            )
-
-            if(btnAddItem.text == getString(R.string.update_item))
+            if(binding.addItemLayout.itemNameTxv.text.isNotEmpty())
             {
-                createShoppingList(newItem)
+                val newItem = ShoppingListItemEntity(
+                    0,
+                    itemId,
+                    Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
+                    binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
+                    if (binding.addItemLayout.itemNameTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                        .toInt() else 1,
+                    if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
+                        .toDouble() else 0.0,
+                    shoppingDate!!.time
+                )
+
+                if (binding.addItemLayout.addItemBtn.text == getString(R.string.update_item)) {
+                    createShoppingList(newItem)
+                }// end of if block
+                else {
+                    createShoppingList(newItem)
+                }// end of else block
+
+                toggleAddItemSheet()
             }// end of if block
             else
             {
-                createShoppingList(newItem)
+                Toast.makeText(binding.root.context, "Enter the item to be added!",
+                    Toast.LENGTH_SHORT).show()
+                binding.addItemLayout.addItemBtn.requestFocus()
             }// end of else block
         }
 
-        btnCancel.setOnClickListener {
+        binding.addItemLayout.cancelBtn.setOnClickListener {
             toggleAddItemSheet()
-            mShoppingItem.setText("")
-            mCategory.setSelection(0)
-            mItemQuantity.setText("")
-            mUnitPrice.setText("")
-        }
-        mGoingShoppingDate.setOnClickListener {
-            showDateTimeDialog(mContext)
+            binding.addItemLayout.itemNameTxv.setText("")
+            binding.addItemLayout.itemCategorySpn.setSelection(0)
+            binding.addItemLayout.itemNameTxv.setText("")
+            binding.addItemLayout.itemUnitPriceTxv.setText("")
         }
 
-        imvAdd.setOnClickListener {
-            toggleAddItemSheet()
+        binding.addItemLayout.goingShoppingOnTxv.setOnClickListener {
+            showDateTimeDialog(binding.root.context)
         }
+
     }// end of function setViewListeners
     //endregion
 
@@ -318,10 +348,10 @@ class MainFragment : Fragment()
     {
         mShoppingListViewModel.addItem(shoppingItem)
 
-        mShoppingItem.setText("")
-        mCategory.setSelection(0)
-        mItemQuantity.setText("")
-        mUnitPrice.setText("")
+        binding.addItemLayout.itemNameTxv.setText("")
+        binding.addItemLayout.itemCategorySpn.setSelection(0)
+        binding.addItemLayout.itemNameTxv.setText("")
+        binding.addItemLayout.itemUnitPriceTxv.setText("")
 
         // Hide the sheet
         toggleAddItemSheet()
@@ -329,7 +359,36 @@ class MainFragment : Fragment()
 
     //endregion
 
-    //region AppBar functions
+    //region View Toggles
+
+    /**
+     * Show the sheet for adding items
+     */
+    private fun toggleAddItemSheet()
+    {
+        val h =  binding.addItemLayout.root.measuredHeight
+
+        if(mPos == APP_SHEET_UP_POSITION)
+        {
+            binding.addItemLayout.root.animate()
+                .translationYBy(0f)
+                .translationY(h.toFloat())
+                .setDuration(500)
+                .withEndAction {
+                    mPos = APP_SHEET_DOWN_POSITION
+                }
+        }// end of if block
+        else
+        {
+            binding.addItemLayout.root.animate()
+                .translationYBy(h.toFloat())
+                .translationY(0f)
+                .setDuration(500)
+                .withEndAction {
+                    mPos = APP_SHEET_UP_POSITION
+                }
+        }// end of else block
+    }// end of function toggleAddItemSheet
 
     /**
      * Set the state of the app bar
@@ -342,40 +401,45 @@ class MainFragment : Fragment()
 
         if (mAppBarState == STANDARD_APPBAR)
         {
-            selectedListSearchAppBarLayout.animate()
+            binding.searchToolBarLayout.root.animate()
                 .alpha(1f)
                 .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        selectedListSearchAppBarLayout.visibility = View.GONE
-                        selectedListAppBarLayout.visibility = View.VISIBLE
+                .setListener(object : AnimatorListenerAdapter()
+                {
+                    override fun onAnimationEnd(animation: Animator)
+                    {
+                        binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility = View.GONE
+                        binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.VISIBLE
                     }
                 })
 
             val view = view
             val im: InputMethodManager =
-                activity!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
 
             try
             {
                 im.hideSoftInputFromWindow(view!!.windowToken, 0) // make keyboard hide
             }// end of try block
-            catch (e: NullPointerException) {}
+            catch (e: NullPointerException) { }
         }// end of if block
         else if (mAppBarState == SEARCH_APPBAR)
         {
-            selectedListAppBarLayout.animate()
+            binding.searchToolBarLayout.root.search_tool_bar_layout.animate()
                 .alpha(1f)
                 .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        selectedListAppBarLayout.visibility = View.GONE
-                        selectedListSearchAppBarLayout.visibility = View.VISIBLE
+                .setListener(object : AnimatorListenerAdapter()
+                {
+                    override fun onAnimationEnd(animation: Animator)
+                    {
+                        binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.GONE
+                        binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility =
+                            View.VISIBLE
                     }
                 })
 
             val im: InputMethodManager =
-                activity!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
             im.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0) // make keyboard popup
         }// end of else if block
     }// end of function setAppBarState
@@ -395,36 +459,7 @@ class MainFragment : Fragment()
         }// end of else block
     }// end of function toggleToolBarState
 
-    /**
-     * Show the sheet for adding items
-     */
-    private fun toggleAddItemSheet()
-    {
-        val h = mAddSheet.measuredHeight
-
-        if(mPos == 1)
-        {
-            mAddSheet.animate()
-                .translationYBy(0f)
-                .translationY(h.toFloat())
-                .setDuration(500)
-                .withEndAction {
-                    mPos = 0
-                }
-        }// end of if block
-        else
-        {
-            mAddSheet.animate()
-                .translationYBy(h.toFloat())
-                .translationY(0f)
-                .setDuration(500)
-                .withEndAction {
-                    mPos = 1
-                }
-        }// end of else block
-    }// end of function toggleAddItemSheet
-
-    //endregion
+    // endregion
 
     //region DateTimePicker Functions
 
@@ -493,7 +528,8 @@ class MainFragment : Fragment()
             value = d.get(Calendar.MINUTE)
 
             // Format the digits
-            setFormatter{ i -> String.format("%02d", i)
+            setFormatter { i ->
+                String.format("%02d", i)
             }
         }
 
@@ -516,9 +552,9 @@ class MainFragment : Fragment()
         }
 
         hourOfDay.setOnValueChangedListener { _, from, to ->
-            if(from == 11 && to == 12)
+            if (from == 11 && to == 12)
             {
-                if(mer == 0)
+                if (mer == 0)
                 {
                     meridiem.value = 1
                     animatePicker(meridiem, 1, 0)
@@ -531,9 +567,9 @@ class MainFragment : Fragment()
                     mer = 0
                 }// end of else block
             }// end of if block
-            else if(from == 12 && to == 11)
+            else if (from == 12 && to == 11)
             {
-                if(mer == 0)
+                if (mer == 0)
                 {
                     meridiem.value = 1
                     animatePicker(meridiem, 1, 0)
@@ -567,9 +603,8 @@ class MainFragment : Fragment()
 
         val endOfNextMonth = Utils.shortFormatterDate.format(aCalendar.time)
 
-        val dates = if(Utils.daysBetweenDates(
-                Utils.shortFormatterDate.parse(lastDateOfPreviousMonth)!!, Date()
-            ) > 5)
+        val dates = if (Utils.daysBetweenDates(
+                Utils.shortFormatterDate.parse(lastDateOfPreviousMonth)!!, Date()) > 5)
         {
             loadDates(lastDateOfPreviousMonth, endOfNextMonth)
         }// end of if block
@@ -590,7 +625,7 @@ class MainFragment : Fragment()
 
         // Check the array to see it it contains today's date and get its index
         // in the array
-        if(Arrays.stream(dates).anyMatch { t -> t == today })
+        if (Arrays.stream(dates).anyMatch { t -> t == today })
         {
             todayIndex = dates.indexOf(today)
         }// end of if block
@@ -598,7 +633,7 @@ class MainFragment : Fragment()
         val datesPicker: NumberPicker =
             dtPickerDialogView.findViewById(R.id.day_pick_txv)
 
-        datesPicker.apply{
+        datesPicker.apply {
             minValue = 0
             maxValue = dates.size - 1
             displayedValues = dates
@@ -611,15 +646,15 @@ class MainFragment : Fragment()
             // Format the date the user selected
             val dateSelected = "${dates[datesPicker.value]}, ${d.get(Calendar.YEAR)} " +
                     "${hourOfDay.value}: ${minuteOfDay.value} ${meridiemArray[meridiem.value]}"
-            val dd =  Utils.formatterNoTimeZone.parse(dateSelected)
+            val dd = Utils.formatterNoTimeZone.parse(dateSelected)
 
-            mGoingShoppingDate.text = Utils.longDayAndMonthDate.format(dd!!)
+            binding.addItemLayout.goingShoppingOnTxv.text = Utils.longDayAndMonthDate.format(dd!!)
             dtDialog.dismiss()
         }
 
         val btnCancelDateTime: Button = dtPickerDialogView.findViewById(R.id.cancel_date_time_btn)
 
-        btnCancelDateTime.setOnClickListener{
+        btnCancelDateTime.setOnClickListener {
             dtDialog.dismiss()
         }
 
@@ -636,7 +671,7 @@ class MainFragment : Fragment()
         animatePicker(hourOfDay, abs(h - 5), h)
         animatePicker(minuteOfDay, abs(m - 5), m)
 
-        if(mer == 0)
+        if (mer == 0)
         {
             meridiem.value = 1
             animatePicker(meridiem, 1, 0)
@@ -646,7 +681,6 @@ class MainFragment : Fragment()
             meridiem.value = 0
             animatePicker(meridiem, 0, 1)
         }// end of else block
-
     } // end of function showDateTimeDialog
 
     @SuppressLint("DiscouragedPrivateApi")
@@ -696,6 +730,17 @@ class MainFragment : Fragment()
 
         handler.postDelayed(incrementWheel, 20)
     }// end of function animatePicker
+
+    override fun onItemClick(date: Long)
+    {
+        val action = MainFragmentDirections.actionViewShoppingList(date)
+        findNavController().navigate(action)
+    }
+
+    override fun deleteShoppingList(date: Long)
+    {
+        listener.deleteShoppingList(date)
+    }
 
     //endregion
 }// end of class MainFragment

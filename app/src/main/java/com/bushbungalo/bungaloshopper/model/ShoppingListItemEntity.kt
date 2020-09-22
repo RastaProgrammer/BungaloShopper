@@ -3,6 +3,10 @@ package com.bushbungalo.bungaloshopper.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.bushbungalo.bungaloshopper.utils.DEFAULT_ITEM_QUANTITY
+import com.bushbungalo.bungaloshopper.utils.DEFAULT_ITEM_UNIT_PRICE
+import com.bushbungalo.bungaloshopper.utils.NEW_SHOPPING_LIST_ITEM
+import java.util.*
 
 @Entity(tableName = "shopping_list")
 data class ShoppingListItemEntity (
@@ -22,3 +26,15 @@ data class ShoppingListItemEntity (
     @ColumnInfo(name = "shopping_date")
     var shoppingDate: Long
 )
+{
+    // Default constructor with default values
+    constructor(): this(
+        NEW_SHOPPING_LIST_ITEM,
+        "",
+        "",
+        "",
+        DEFAULT_ITEM_QUANTITY,
+        DEFAULT_ITEM_UNIT_PRICE,
+        Date().time
+    )
+}

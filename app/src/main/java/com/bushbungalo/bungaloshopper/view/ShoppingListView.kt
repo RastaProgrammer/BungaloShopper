@@ -14,6 +14,8 @@ interface ShoppingListView
 
     fun deleteShoppingListItem(shoppingListItem: ShoppingListItemEntity)
 
+    fun exitApp()
+
     fun getAllShoppingLists()
 
     fun getListByDate(listDate: Long)

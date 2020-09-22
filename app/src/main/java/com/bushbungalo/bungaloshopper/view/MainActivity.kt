@@ -14,9 +14,7 @@ import com.bushbungalo.bungaloshopper.viewmodel.TotalListViewModel
 class MainActivity : AppCompatActivity(), ShoppingListView
 {
     //region Declarations
-    private val mainFragment = MainFragment.newInstance()
-    private val shoppingListFragment = ShoppingListFragment.newInstance()
-    var mSelectedShoppingList = 0L
+
     //endregion
 
     //region AppCompatActivity Interface Implementations
@@ -33,49 +31,9 @@ class MainActivity : AppCompatActivity(), ShoppingListView
         mShoppingListViewModel = ViewModelProvider(this)
             .get(ShoppingListViewModel::class.java)
 
-        loadMainFragment()
-
         //mShoppingListViewModel.deleteAllShoppingLists()
         //mShoppingListViewModel.addSampleData()
     }// end of function onCreate
-
-    //endregion
-
-    //region Fragment Loading
-    /**
-     * Load the main fragment
-     */
-    private fun loadMainFragment()
-    {
-        supportFragmentManager
-            .beginTransaction()
-            .setCustomAnimations(
-                R.animator.enter_from_right,
-                R.animator.exit_to_left,
-                R.animator.enter_from_left,
-                R.animator.exit_to_right
-            )
-            .replace(R.id.app_main_container_fl, mainFragment,
-                "main").commit()
-    }// end of function loadShoppingListFragment
-
-    /**
-     * Load the fragment for a single shopping list
-     */
-    fun loadShoppingListFragment()
-    {
-        supportFragmentManager
-            .beginTransaction()
-            .addToBackStack(null)
-            .setCustomAnimations(
-                R.animator.enter_from_right,
-                R.animator.exit_to_left,
-                R.animator.enter_from_left,
-                R.animator.exit_to_right
-            )
-            .replace(R.id.app_main_container_fl, shoppingListFragment,
-                "day list").commit()
-    }// end of function loadShoppingListFragment
 
     //endregion
 
@@ -105,6 +63,11 @@ class MainActivity : AppCompatActivity(), ShoppingListView
         mShoppingListViewModel.deleteShoppingListItem(shoppingListItem)
     }// end of function deleteShoppingList
 
+    override fun exitApp()
+    {
+        finish()
+    }// end of function exitApp
+
     override fun getAllShoppingLists()
     {
         mShoppingListViewModel.getAllShoppingList()
@@ -114,5 +77,6 @@ class MainActivity : AppCompatActivity(), ShoppingListView
     {
         mShoppingListViewModel.getListByDate(listDate)
     }// end of function getListByDate
+
     //endregion
 }// end of class MainActivity

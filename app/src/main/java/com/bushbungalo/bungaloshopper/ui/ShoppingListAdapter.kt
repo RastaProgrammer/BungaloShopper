@@ -111,19 +111,19 @@ class ShoppingListAdapter(
         {
             ItemViewType.HEADER.ordinal -> {
                 LayoutInflater.from(parent.context).inflate(
-                    R.layout.selected_list_category_header_item, parent, false
+                    R.layout.day_shopping_list_category_header_item, parent, false
                 )
             }
 
             ItemViewType.HEADER.ordinal -> {
                 LayoutInflater.from(parent.context).inflate(
-                    R.layout.selected_list_item, parent, false
+                    R.layout.day_shopping_list_item, parent, false
                 )
             }
             else -> {
 
                 LayoutInflater.from(parent.context).inflate(
-                    R.layout.selected_list_item, parent, false
+                    R.layout.day_shopping_list_item, parent, false
                 )
             }
         }// end of when block

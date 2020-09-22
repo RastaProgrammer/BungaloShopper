@@ -3,6 +3,7 @@ package com.bushbungalo.bungaloshopper.view
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.*
 import android.graphics.drawable.ColorDrawable
@@ -14,22 +15,28 @@ import android.text.TextWatcher
 import android.view.*
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
+import com.bushbungalo.bungaloshopper.databinding.DayShoppingListFragmentBinding
+import com.bushbungalo.bungaloshopper.databinding.RemoveItemPromptLayoutBinding
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
 import com.bushbungalo.bungaloshopper.ui.CategoriesAdapter
 import com.bushbungalo.bungaloshopper.ui.MarginDividerItemDecoration
 import com.bushbungalo.bungaloshopper.ui.ShoppingListAdapter
-import com.bushbungalo.bungaloshopper.utils.Utils
+import com.bushbungalo.bungaloshopper.utils.*
 import com.bushbungalo.bungaloshopper.utils.Utils.addOpacity
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp.Companion.mShoppingListViewModel
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.android.synthetic.main.main_fragment.view.*
+import kotlinx.android.synthetic.main.main_fragment_search_bar.view.*
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.text.SimpleDateFormat
@@ -40,56 +47,32 @@ import kotlin.math.roundToInt
 class ShoppingListFragment : Fragment()
 {
     //region Field Declarations
+    private lateinit var binding: DayShoppingListFragmentBinding
     private lateinit var mainListener: ShoppingListView
-    private var mAppBarState = 0
 
-    private lateinit var selectedListAppBarLayout: ConstraintLayout
-    private lateinit var selectedListSearchAppBarLayout: ConstraintLayout
-
-    private lateinit var mShoppingListDate: TextView
-    private lateinit var mShoppingListRecycler: RecyclerView
-    private lateinit var mAdapter: ShoppingListAdapter
-
-    private lateinit var mLinearLayoutManager: LinearLayoutManager
-
-    private lateinit var viewFragment: View
-    private lateinit var mAddSheet: View
-    private var mPos = 0
+    private val args: ShoppingListFragmentArgs by navArgs()
 
     private lateinit var mCategoryAdapter: ArrayAdapter<String>
+    private lateinit var mAdapter: ShoppingListAdapter
+    private lateinit var mLinearLayoutManager: LinearLayoutManager
 
-    // Add Item Sheet
-    private lateinit var mGoingShoppingDate: TextView
-    private lateinit var mShoppingItem: EditText
-    private lateinit var mCategory: Spinner
-    private lateinit var mItemQuantity: EditText
-    private lateinit var mUnitPrice: EditText
-    private lateinit var btnAddItem: Button
-    private lateinit var btnCancel: Button
-
-    // Main Bar
-    private lateinit var imvAdd: ImageView
-    private lateinit var imvBill: ImageView
-    private lateinit var imvSearch: ImageView
-
-    // Search Bar
-    private lateinit var edtSearchQuery: EditText
-    private lateinit var imvBack: ImageView
-    private lateinit var imvClearFilter: ImageView
+    private var mAppBarState = 0
+    private var mPos = 0
 
     private lateinit var mContext: Context
+    private var mBillTotal = 0.0
+
+    private var mShoppingList = mutableListOf<ShoppingListItemEntity>()
     private var mSnackTime: View? = null
 
     var updateId = 0
-    private var mBillTotal = 0.0
-    var mFiltering = false
-    lateinit var deletedItem: ShoppingListItemEntity
     var deletedItemIndex = 0
 
+    var mFiltering = false
     var deleteItem = false
     var editItem = false
 
-    private var mShoppingList = mutableListOf<ShoppingListItemEntity>()
+    lateinit var deletedItem: ShoppingListItemEntity
 
     /**
      * Callback which handles the user swiping the recycler view items
@@ -261,50 +244,60 @@ class ShoppingListFragment : Fragment()
 
     companion object
     {
-        private var mInstance = ShoppingListFragment()
-
         // App Bar
         private const val STANDARD_APPBAR: Int = 0
         private const val SEARCH_APPBAR = 1
 
-        fun newInstance(): ShoppingListFragment
-        {
-            return mInstance
-        }// end of function newInstance
+        // Add Sheet
+        private const val APP_SHEET_DOWN_POSITION = 0
+        private const val APP_SHEET_UP_POSITION = 1
     }// end of companion object
 
     //endregion
 
     //region Interface Implementations
-    override fun onAttach(context: Context)
-    {
-        super.onAttach(context)
-        mainListener = context as ShoppingListView
-    }// end of function onAttach
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?): View?
     {
         super.onCreateView(inflater, container, savedInstanceState)
+        mainListener = activity as MainActivity
 
-        viewFragment = inflater.inflate(R.layout.selected_shopping_list, container, false)
-        mContext = viewFragment.context
+        binding = DayShoppingListFragmentBinding.inflate(inflater, container, false)
+        mContext = binding.root.context
 
-        val rootView: ViewGroup = viewFragment.findViewById(R.id.day_shopping_list_root)
+        val categories = resources.getStringArray(R.array.categories)
+        mCategoryAdapter = CategoriesAdapter(binding.root.context, categories.toMutableList())
+        binding.addItemLayout.itemCategorySpn.adapter = mCategoryAdapter
 
-        loadCustomFont(rootView)
-
-        bindViewsToFragment(viewFragment.context)
+        loadCustomFont(binding.root)
 
         setViewListeners()
 
         initRecyclerView()
 
-        initObserver()
+        initObserver(args.date, savedInstanceState)
 
         setAppBarState(STANDARD_APPBAR)
 
-        return viewFragment
+        requireActivity().onBackPressedDispatcher.addCallback (
+            viewLifecycleOwner,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed()
+                {
+                    if(mAppBarState != STANDARD_APPBAR)
+                    {
+                        toggleToolBarState()
+                    }// end of if block
+                    else
+                    {
+                        findNavController().navigateUp()
+                    }// end of else block
+                }
+            }
+        )
+
+        return binding.root
     }// end of function onCreate
 
     override fun onResume()
@@ -313,123 +306,45 @@ class ShoppingListFragment : Fragment()
         setAppBarState(STANDARD_APPBAR)
     }// end of function onResume
 
-    //endregion
-
-    //region Main Brain
-
-    /**
-     * Add or updated an item on the shopping list
-     *
-     * @param shoppingItem The item to be added or updated
-     */
-    private fun addOrUpdate(shoppingItem: ShoppingListItemEntity)
+    override fun onStart()
     {
-        // Use the id of the item to be updated so it will be replaced
-        if(btnAddItem.text == getString(R.string.update_item))
-        {
-            shoppingItem.id = updateId
-        }// end of if block
-
-        mShoppingListViewModel.addItem(shoppingItem)
-
-        mShoppingItem.setText("")
-        mCategory.setSelection(0)
-        mItemQuantity.setText("")
-        mUnitPrice.setText("")
-
-        // Hide the sheet
-        toggleAddItemSheet(null)
-
-        snackNotification(
-            "Bill Total: $${(mBillTotal * 100.0).roundToInt() / 100.0}",
-            mContext.resources.getColor(R.color.colorPrimaryDark, null))
-    }// end of function
-
-    @SuppressLint("DiscouragedPrivateApi")
-    private fun animatePicker(picker: NumberPicker, from: Int, to: Int)
-    {
-        var counter = from
-        picker.value = counter
-
-        val increment = from <= to
-
-        val handler = Handler(Looper.getMainLooper())
-
-        val incrementWheel: Runnable = object : Runnable
-        {
-            override fun run()
-            {
-                val method: Method
-
-                try
-                {
-                    method = picker.javaClass.getDeclaredMethod(
-                        "changeValueByOne", Boolean::class.javaPrimitiveType)
-                    method.isAccessible = true
-                    method.invoke(picker, increment)
-                }// end of try block
-                catch (e: NoSuchMethodException) {}
-                catch (e: IllegalArgumentException) {}
-                catch (e: IllegalAccessException) {}
-                catch (e: InvocationTargetException) {}
-                finally
-                {
-                    ++counter
-
-                    if (counter >= to)
-                    {
-                        return
-                    }// end of if block
-                    else
-                    {
-                        handler.postDelayed(this, 20)
-                    }// end of else block
-                }// end of finally block
-            }// end of function run
-        }// end of function incrementWheel
-
-        handler.postDelayed(incrementWheel, 20)
-    }// end of function animatePicker
-
-    /**
-     * Bind the views that will be referenced
-     *
-     * @param context  A valid application context
-     */
-    private fun bindViewsToFragment(context: Context)
-    {
-        mCategory = viewFragment.findViewById(R.id.item_category_spn)
-        mShoppingListRecycler = viewFragment.findViewById(R.id.shopping_list_rv)
-        mShoppingListDate = viewFragment.findViewById(R.id.shopping_date_txv)
-
-        selectedListAppBarLayout = viewFragment.findViewById(R.id.main_tool_bar_layout)
-        selectedListSearchAppBarLayout = viewFragment.findViewById(R.id.search_tool_bar_layout)
-
-        edtSearchQuery = viewFragment.findViewById(R.id.search_toolbar_search_edt)
-        imvBack = viewFragment.findViewById(R.id.back_to_normal_imv)
-        imvSearch = viewFragment.findViewById(R.id.search_shopping_list_imv)
-        imvAdd = viewFragment.findViewById(R.id.add_to_shopping_list_imv)
-        imvBill = viewFragment.findViewById(R.id.bill_total_imv)
-        imvClearFilter = viewFragment.findViewById(R.id.clear_filter_imv)
-
-        mAddSheet = viewFragment.findViewById(R.id.add_item_layout)
-        mShoppingItem = viewFragment.findViewById(R.id.item_name_txv)
-        mItemQuantity = viewFragment.findViewById(R.id.item_quantity_txv)
-        mUnitPrice = viewFragment.findViewById(R.id.item_unit_price_txv)
-
-        btnAddItem = viewFragment.findViewById(R.id.add_item_btn)
-        btnCancel = viewFragment.findViewById(R.id.cancel_btn)
-        mGoingShoppingDate = viewFragment.findViewById(R.id.going_shopping_on_txv)
-
-        mAddSheet.animate()
+        super.onStart()
+        binding.addItemLayout.root.animate()
             .translationYBy(0f)
             .translationY(1000f)
             .duration = 0
+    }
 
-        val categories = resources.getStringArray(R.array.categories)
-        mCategoryAdapter = CategoriesAdapter(context, categories.toMutableList())
-        mCategory.adapter = mCategoryAdapter
-    }// end of function bindViewsToFragment
+    override fun onSaveInstanceState(outState: Bundle)
+    {
+        if(::binding.isInitialized)
+        {
+            with(binding.searchToolBarLayout.searchToolbarSearchEdt)
+            {
+                outState.putString(SEARCH_QUERY, text.toString())
+                outState.putInt(SEARCH_CURSOR_POSITION, selectionStart)
+            }// end of with block
+
+            outState.putInt(APP_BAR_STATE, mAppBarState)
+
+            with(binding.addItemLayout)
+            {
+                outState.putString(SHOPPING_DATE, goingShoppingOnTxv.text.toString())
+                outState.putString(PRODUCT_NAME, itemNameTxv.text.toString())
+                outState.putString(PRODUCT_CATEGORY, itemCategorySpn.selectedItem.toString())
+                outState.putString(PRODUCT_QUANTITY, itemQuantityTxv.text.toString())
+                outState.putString(PRODUCT_UNIT_PRICE, itemUnitPriceTxv.text.toString())
+            }// end of when block
+
+            outState.putInt(ADD_SHEET_POSITION, mPos)
+        }// end of if block
+
+        super.onSaveInstanceState(outState)
+    }// end of function onSaveInstanceState
+
+    //endregion
+
+    //region Bill Total Snackbar
 
     /**
      * Calculates a running total for the bill
@@ -442,81 +357,7 @@ class ShoppingListFragment : Fragment()
         {
             mBillTotal += (item.productQuantity * item.unitPrice)
         }// end or range loop
-
-        snackNotification("Bill Total (-Tax): ${
-                Utils.convertToCurrency(mBillTotal, Locale.US)}",
-            mContext.resources.getColor(R.color.colorPrimaryDark, null))
-
-        // Hide the bill total after five seconds
-        val handler = Handler(Looper.getMainLooper())
-        val runnable = Runnable {
-            hideBillingSnackBar()
-        }
-
-        handler.postDelayed(runnable, 5000)
     }// end of function calculateBillTotal
-
-    /**
-     * Returns a list with group heading inserted into the list
-     *
-     * @param ungroupedList The list in its original order
-     * @return The grouped list
-     */
-    private fun groupedList(ungroupedList: MutableList<ShoppingListItemEntity>) :
-            MutableList<ShoppingListItemEntity>
-    {
-        val gList = mutableListOf<ShoppingListItemEntity>()
-        var currentCategory = ungroupedList[0].productCategory
-        var categoryChange: Boolean
-
-        gList.add(
-            ShoppingListItemEntity(
-                id = 0,
-                shoppingListId = "",
-                productName = Utils.HEADER_ITEM,
-                productCategory = ungroupedList[0].productCategory,
-                productQuantity = 0,
-                unitPrice = 0.0,
-                shoppingDate = ungroupedList[0].shoppingDate
-            )
-        )
-
-        for(item in ungroupedList)
-        {
-            if(currentCategory == item.productCategory)
-            {
-                categoryChange = false
-            }// end of if block
-            else
-            {
-                currentCategory = item.productCategory
-                categoryChange = true
-            }// end of else block
-
-            if(categoryChange)
-            {
-                gList.add(
-                    ShoppingListItemEntity(
-                        id = 0,
-                        shoppingListId = "",
-                        productName = Utils.HEADER_ITEM,
-                        productCategory = item.productCategory,
-                        productQuantity = 0,
-                        unitPrice = 0.0,
-                        shoppingDate = item.shoppingDate
-                    )
-                )
-                gList.add(item)
-            }// end of if block
-            else
-            {
-                gList.add(item)
-            }// end of else block
-        }// end of range for loop
-
-        return gList
-    }// end of function groupedList
-
     /**
      * Hide the [Snackbar] which displays the current bill total
      */
@@ -531,12 +372,33 @@ class ShoppingListFragment : Fragment()
                     .translationY(200f)
                     .setDuration(500)
                     .withEndAction {
-                        (mSnackTime!!.parent as ViewGroup)
-                            .removeView(mSnackTime)
+                        if(mSnackTime != null)
+                        {
+                            (mSnackTime!!.parent as ViewGroup)
+                                .removeView(mSnackTime)
+                        }// end of if block
                     }
             }// end of if block
         }// end of if block
     }// end of function hideBillingSnackBar
+
+    /**
+     * Displays a [Snackbar] with a running bill total
+     *
+     * @param context   A valid [Context] associated with the activity
+     */
+    private fun showBillTotal(context: Context)
+    {
+        snackNotification("Bill Total (-Tax): ${
+            Utils.convertToCurrency(mBillTotal, Locale.US)}",
+            context.resources.getColor(R.color.colorPrimaryDark, null))
+
+        // Hide the bill total after five seconds
+        val handler = Handler(Looper.getMainLooper())
+        val runnable = Runnable { hideBillingSnackBar() }
+
+        handler.postDelayed(runnable, 5000)
+    }// end of function showBillTotal
 
     /**
      * Show the [Snackbar] which displays the current bill total
@@ -545,75 +407,70 @@ class ShoppingListFragment : Fragment()
     {
         snackNotification("Bill Total (-Tax): ${
             Utils.convertToCurrency(mBillTotal, Locale.US)}",
-            mContext.resources.getColor(R.color.colorPrimaryDark, null))
+            binding.root.context.resources.getColor(R.color.colorPrimaryDark, null))
     }// end of function showBillingSnackBar
 
     /**
-     * Initialize the observers
+     * Displays a snack bar containing a message
+     *
+     * @param  message  The message to be displayed to the user
+     * @param  bgColor  The background color of the [Snackbar]
      */
-    private fun initObserver()
+    private fun snackNotification(message: String, bgColor: Int)
     {
-        val formatterDate = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.ENGLISH)
-        val sListDate = Date((mainListener as MainActivity).mSelectedShoppingList)
+        val activityView: View = (mainListener as MainActivity).window.decorView.findViewById(
+            android.R.id.content)
+        val actionReaction = Snackbar.make(activityView, message, Snackbar.LENGTH_INDEFINITE)
 
-        // Get the shopping list for a specific date
-        mShoppingListViewModel.initializeProducts(sListDate.time)
+        actionReaction.setAction("DISMISS") {
+            actionReaction.dismiss()
+        }
 
-        mShoppingListViewModel.mShoppingList.observe(viewLifecycleOwner,
-            { shoppingLists ->
-                mShoppingList.clear()
-                mShoppingList.addAll(groupedList(shoppingLists))
-                mAdapter = ShoppingListAdapter(mShoppingList, mInstance)
-                mShoppingListRecycler.adapter = mAdapter
-                mAdapter.notifyDataSetChanged()
-
-                mShoppingListDate.text = formatterDate.format(sListDate)
-            })
-    }// end of function initObserver
-
-    /**
-     * Initialize the recycler view
-     */
-    private fun initRecyclerView()
-    {
-        mLinearLayoutManager = LinearLayoutManager(context)
-        mShoppingListRecycler.setHasFixedSize(true)
-
-        val divider = MarginDividerItemDecoration(
-            BungaloShopperApp.shopperContext,
-            mLinearLayoutManager.orientation,
-            Utils.devicePixelsToPixels(8, BungaloShopperApp.shopperContext)
+        val billingView = actionReaction.view
+        billingView.setBackgroundColor(
+            addOpacity(
+                bgColor, 90
+            )
+        )
+        val infoText: TextView = billingView.findViewById(
+            com.google.android.material.R.id.snackbar_text
         )
 
-        mShoppingListRecycler.addItemDecoration(divider)
-        mShoppingListRecycler.layoutManager = mLinearLayoutManager
-        ItemTouchHelper(iTouchCallback).attachToRecyclerView(mShoppingListRecycler)
-    } // end of function initRecyclerView
+        mSnackTime = actionReaction.view
+        infoText.setTextColor(Color.WHITE)
+        actionReaction.setActionTextColor(Color.GREEN)
+        actionReaction.show()
+    }// end of function snackNotification
+
+    //endregion
+
+    //region Database Actions
 
     /**
-     * Loads the dates that the date picker will contain usually a
-     * two months span
+     * Add or updated an item on the shopping list
      *
-     * @param firstDate The starting date
-     * @param secondDate The ending date
+     * @param shoppingItem The item to be added or updated
      */
-    private fun loadDates(firstDate: String, secondDate: String): Array<String>
+    private fun addOrUpdate(shoppingItem: ShoppingListItemEntity)
     {
-        var start: Date = Utils.shortFormatterDate.parse(firstDate)!!
-        val end: Date = Utils.shortFormatterDate.parse(secondDate)!!
-        val totalDates: MutableList<String> = ArrayList()
-        val c = Calendar.getInstance()
-        c.time = start
-
-        while (start.before(end))
+        // Use the id of the item to be updated so it will be replaced
+        if(binding.addItemLayout.addItemBtn.text == getString(R.string.update_item))
         {
-            totalDates.add(Utils.shortFormatterWeekDay.format(start))
-            c.add(Calendar.DATE, 1)
-            start = c.time
-        }// end of while loop
+            shoppingItem.id = updateId
+        }// end of if block
 
-        return totalDates.toTypedArray()
-    }// end of function loadDates
+        mShoppingListViewModel.addItem(shoppingItem)
+
+        // Reset the data on the add sheet
+        resetAddSheet()
+
+        // Hide the sheet
+        toggleAddItemSheet(null)
+
+        snackNotification(
+            "Bill Total: $${(mBillTotal * 100.0).roundToInt() / 100.0}",
+            mContext.resources.getColor(R.color.colorPrimaryDark, null))
+    }// end of function addOrUpdate
 
     /**
      * Displays a prompt to confirm that the user wishes to remove an item from the list
@@ -625,34 +482,25 @@ class ShoppingListFragment : Fragment()
     {
         val updateListPromptDialogView =
             View.inflate(context, R.layout.remove_item_prompt_layout, null)
-        val updateListPromptDialog: android.app.AlertDialog = android.app.AlertDialog.Builder(
-            context
-        ).create()
-        val txvRemoveItem: TextView = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_txv)
-        val btnYes: Button = updateListPromptDialogView.findViewById(R.id.remove_item_btn)
-        val btnNo: Button = updateListPromptDialogView.findViewById(R.id.forget_removing_btn)
-        val rootView: ViewGroup = updateListPromptDialogView.findViewById(R.id.remove_item_prompt_root)
 
-        val prompt = "Do you wish to remove ${item.productName} from the list?"
+        val promptBinding = RemoveItemPromptLayoutBinding.bind(updateListPromptDialogView)
+        val updateListPromptDialog: AlertDialog = AlertDialog.Builder(context).create()
 
-        loadCustomFont(rootView)
+        loadCustomFont(promptBinding.removeItemPromptRoot)
 
-        txvRemoveItem.text = prompt
+        val shoppingDate = Utils.longDayAndMonthDate.format(Date(item.shoppingDate))
+        val prompt = "Do you wish to remove the shopping list for $shoppingDate from the database?"
 
-        btnYes.setOnClickListener {
+        promptBinding.removeItemPromptTxv.text = prompt
+
+        promptBinding.removeItemBtn.setOnClickListener {
             updateListPromptDialog.dismiss()
 
-            mShoppingList.removeAt(deletedItemIndex)
-
-            // Remove the item from the database table
             removeItem(item)
         }
 
-        btnNo.setOnClickListener {
+        promptBinding.forgetRemovingBtn.setOnClickListener {
             updateListPromptDialog.dismiss()
-
-            //restoreItem(deletedItem, deletedItemIndex)
-            calculateBillTotal()
         }
 
         updateListPromptDialog.setView(updateListPromptDialogView)
@@ -663,7 +511,7 @@ class ShoppingListFragment : Fragment()
         // Adjust the layout after the window is displayed
         val dialogWindow: Window = updateListPromptDialog.window!!
 
-        dialogWindow.setLayout(980, ViewGroup.LayoutParams.WRAP_CONTENT)
+        dialogWindow.setLayout(980,ViewGroup.LayoutParams.WRAP_CONTENT)
         dialogWindow.setGravity(Gravity.CENTER)
         Utils.zoomInView(updateListPromptDialogView)
     }// end of function removeItemPrompt
@@ -720,139 +568,80 @@ class ShoppingListFragment : Fragment()
         mAdapter.notifyItemInserted(position)
     }// end of function restoreItem
 
-    /**
-     * Set the state of the app bar
-     *
-     * @param state The current state of the app bar
-     */
-    private fun setAppBarState(state: Int)
+    //endregion
+
+    //region Date Time Picker
+
+    @SuppressLint("DiscouragedPrivateApi")
+    private fun animatePicker(picker: NumberPicker, from: Int, to: Int)
     {
-        mAppBarState = state
+        var counter = from
+        picker.value = counter
 
-        if (mAppBarState == STANDARD_APPBAR)
+        val increment = from <= to
+
+        val handler = Handler(Looper.getMainLooper())
+
+        val incrementWheel: Runnable = object : Runnable
         {
-            selectedListSearchAppBarLayout.animate()
-                .alpha(1f)
-                .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        selectedListSearchAppBarLayout.visibility = View.GONE
-                        selectedListAppBarLayout.visibility = View.VISIBLE
-                    }
-                })
-
-            val view = view
-            val im: InputMethodManager =
-                activity!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-
-            try
+            override fun run()
             {
-                im.hideSoftInputFromWindow(view!!.windowToken, 0) // make keyboard hide
-            }// end of try block
-            catch (e: NullPointerException) {}
-        }// end of if block
-        else if (mAppBarState == SEARCH_APPBAR)
-        {
-            selectedListAppBarLayout.animate()
-                .alpha(1f)
-                .setDuration(250)
-                .setListener(object : AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator) {
-                        selectedListAppBarLayout.visibility = View.GONE
-                        selectedListSearchAppBarLayout.visibility = View.VISIBLE
-                    }
-                })
+                val method: Method
 
-            val im: InputMethodManager =
-                activity!!.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            im.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0) // make keyboard popup
-        }// end of else if block
-    }// end of function setAppBarState
-
-    /**
-     * Setup the listener for the view
-     */
-    private fun setViewListeners()
-    {
-        btnAddItem.setOnClickListener {
-            val itemId = "bs${SimpleDateFormat("HHmmssSSS", Locale.ENGLISH).format(Date())}"
-            val shoppingDate = Utils.longDayAndMonthDate.parse(mGoingShoppingDate.text.toString())
-
-            val newItem = ShoppingListItemEntity(
-                0,
-                itemId,
-                Utils.toProperCase(mShoppingItem.text.toString()),
-                mCategory.selectedItem.toString(),
-                if (mItemQuantity.text.toString().isNotEmpty()) mItemQuantity.text.toString()
-                    .toInt() else 1,
-                if (mUnitPrice.text.toString().isNotEmpty()) mUnitPrice.text.toString()
-                    .toDouble() else 0.0,
-                shoppingDate!!.time
-            )
-
-            if(btnAddItem.text == getString(R.string.update_item))
-            {
-                addOrUpdate(newItem)
-            }// end of if block
-            else
-            {
-                addOrUpdate(newItem)
-            }// end of else block
-        }// end of btnAddItem.setOnClickListener block
-
-        btnCancel.setOnClickListener {
-            toggleAddItemSheet(null)
-            mShoppingItem.setText("")
-            mCategory.setSelection(0)
-            mItemQuantity.setText("")
-            mUnitPrice.setText("")
-        }// end of btnCancel.setOnClickListener block
-
-        mGoingShoppingDate.setOnClickListener {
-            showDateTimeDialog(mContext)
-        }// end of mGoingShoppingDate.setOnClickListener block
-
-        imvAdd.setOnClickListener {
-            toggleAddItemSheet(null)
-            hideBillingSnackBar()
-        }// end of imvAdd.setOnClickListener block
-
-        imvBill.setOnClickListener {
-            showBillingSnackBar()
-        }// end of imvBill.setOnClickListener block
-
-        imvSearch.setOnClickListener {
-            toggleToolBarState()
-        }// end of imvSearch.setOnClickListener block
-
-        imvBack.setOnClickListener {
-            toggleToolBarState()
-        }// end of function imvBack.setOnClickListener
-
-        edtSearchQuery.addTextChangedListener(object : TextWatcher
-        {
-            override fun afterTextChanged(s: Editable) {}
-
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int)
-            {
-                if (edtSearchQuery.text.isNotEmpty())
+                try
                 {
-                    imvClearFilter.visibility = View.VISIBLE
-                }// end of if block
-                else {
-                    imvClearFilter.visibility = View.INVISIBLE
-                }// end of if block
+                    method = picker.javaClass.getDeclaredMethod(
+                        "changeValueByOne", Boolean::class.javaPrimitiveType)
+                    method.isAccessible = true
+                    method.invoke(picker, increment)
+                }// end of try block
+                catch (e: NoSuchMethodException) {}
+                catch (e: IllegalArgumentException) {}
+                catch (e: IllegalAccessException) {}
+                catch (e: InvocationTargetException) {}
+                finally
+                {
+                    ++counter
 
-                mAdapter.filterItems(edtSearchQuery.text.toString())
-            }
-        })// end of edtSearchQuery.addTextChangedListener block
+                    if (counter >= to)
+                    {
+                        return
+                    }// end of if block
+                    else
+                    {
+                        handler.postDelayed(this, 20)
+                    }// end of else block
+                }// end of finally block
+            }// end of function run
+        }// end of function incrementWheel
 
-        imvClearFilter.setOnClickListener{
-            edtSearchQuery.setText("")
-        }// end of imvClearFilter.setOnClickListener block
-    }// end of function setViewListeners
+        handler.postDelayed(incrementWheel, 20)
+    }// end of function animatePicker
+
+    /**
+     * Loads the dates that the date picker will contain usually a
+     * two months span
+     *
+     * @param firstDate The starting date
+     * @param secondDate The ending date
+     */
+    private fun loadDates(firstDate: String, secondDate: String): Array<String>
+    {
+        var start: Date = Utils.shortFormatterDate.parse(firstDate)!!
+        val end: Date = Utils.shortFormatterDate.parse(secondDate)!!
+        val totalDates: MutableList<String> = ArrayList()
+        val c = Calendar.getInstance()
+        c.time = start
+
+        while (start.before(end))
+        {
+            totalDates.add(Utils.shortFormatterWeekDay.format(start))
+            c.add(Calendar.DATE, 1)
+            start = c.time
+        }// end of while loop
+
+        return totalDates.toTypedArray()
+    }// end of function loadDates
 
     /**
      * Show a custom date time picker
@@ -863,7 +652,7 @@ class ShoppingListFragment : Fragment()
     {
         val dtPickerDialogView =
             View.inflate(c, R.layout.date_time_picker, null)
-        val dtDialog: android.app.AlertDialog = android.app.AlertDialog.Builder(c).create()
+        val dtDialog: AlertDialog = AlertDialog.Builder(c).create()
 
         val rootView: ViewGroup = dtPickerDialogView.findViewById(R.id.time_root)
         loadCustomFont(rootView)
@@ -1014,7 +803,7 @@ class ShoppingListFragment : Fragment()
                     "${hourOfDay.value}: ${minuteOfDay.value} ${meridiemArray[meridiem.value]}"
             val dd =  Utils.formatterNoTimeZone.parse(dateSelected)
 
-            mGoingShoppingDate.text = Utils.longDayAndMonthDate.format(dd!!)
+            binding.addItemLayout.goingShoppingOnTxv.text = Utils.longDayAndMonthDate.format(dd!!)
             dtDialog.dismiss()
         }
 
@@ -1050,79 +839,371 @@ class ShoppingListFragment : Fragment()
 
     } // end of function showDateTimeDialog
 
+    //endregion
+
+    //region Setup
+
     /**
-     * Displays a snack rar containing a message
+     * Returns a list with group heading inserted into the list
      *
-     * @param  message  The message to be displayed to the user
-     * @param  bgColor  The background color of the [Snackbar]
+     * @param ungroupedList The list in its original order
+     * @return The grouped list
      */
-    private fun snackNotification(message: String, bgColor: Int)
+    private fun groupedList(ungroupedList: MutableList<ShoppingListItemEntity>) :
+            MutableList<ShoppingListItemEntity>
     {
-        val activityView: View = (mainListener as MainActivity).window.decorView.findViewById(
-            android.R.id.content)
-        val actionReaction = Snackbar.make(activityView, message, Snackbar.LENGTH_INDEFINITE)
+        val gList = mutableListOf<ShoppingListItemEntity>()
+        var currentCategory = ungroupedList[0].productCategory
+        var categoryChange: Boolean
 
-        actionReaction.setAction("DISMISS") {
-            actionReaction.dismiss()
-        }
-
-        val billingView = actionReaction.view
-        billingView.setBackgroundColor(
-            addOpacity(
-                bgColor, 90
+        gList.add(
+            ShoppingListItemEntity(
+                id = 0,
+                shoppingListId = "",
+                productName = Utils.HEADER_ITEM,
+                productCategory = ungroupedList[0].productCategory,
+                productQuantity = 0,
+                unitPrice = 0.0,
+                shoppingDate = ungroupedList[0].shoppingDate
             )
         )
-        val infoText: TextView = billingView.findViewById(
-            com.google.android.material.R.id.snackbar_text
+
+        for(item in ungroupedList)
+        {
+            if(currentCategory == item.productCategory)
+            {
+                categoryChange = false
+            }// end of if block
+            else
+            {
+                currentCategory = item.productCategory
+                categoryChange = true
+            }// end of else block
+
+            if(categoryChange)
+            {
+                gList.add(
+                    ShoppingListItemEntity(
+                        id = 0,
+                        shoppingListId = "",
+                        productName = Utils.HEADER_ITEM,
+                        productCategory = item.productCategory,
+                        productQuantity = 0,
+                        unitPrice = 0.0,
+                        shoppingDate = item.shoppingDate
+                    )
+                )
+                gList.add(item)
+            }// end of if block
+            else
+            {
+                gList.add(item)
+            }// end of else block
+        }// end of range for loop
+
+        return gList
+    }// end of function groupedList
+
+    /**
+     * Initialize the observers
+     */
+    private fun initObserver(date: Long, savedInstanceState: Bundle?)
+    {
+        val formatterDate = SimpleDateFormat("EEEE, MMMM dd, yyyy", Locale.ENGLISH)
+        val sListDate = Date(date)
+
+        // Get the shopping list for a specific date
+        mShoppingListViewModel.initializeProducts(sListDate.time)
+
+        mShoppingListViewModel.mShoppingList.observe(viewLifecycleOwner,
+            { shoppingLists ->
+
+                if(shoppingLists.size > 0)
+                {
+                    mShoppingList.clear()
+                    mShoppingList.addAll(groupedList(shoppingLists))
+                    mAdapter = ShoppingListAdapter(mShoppingList, this)
+                    binding.shoppingListRv.adapter = mAdapter
+                    mAdapter.notifyDataSetChanged()
+
+                    binding.shoppingDateTxv.text = formatterDate.format(sListDate)
+
+                    if(savedInstanceState != null)
+                    {
+                        val previousAppBarState = savedInstanceState.getInt(APP_BAR_STATE)
+                        val previousSheetPosition = savedInstanceState.getInt(ADD_SHEET_POSITION)
+
+                        val queryString: String? = savedInstanceState.getString(SEARCH_QUERY)
+                        val cursorPosition: Int = savedInstanceState.getInt(SEARCH_CURSOR_POSITION)
+
+                        if(previousAppBarState == SEARCH_APPBAR)
+                        {
+                            toggleToolBarState()
+
+                            if(queryString != null)
+                            {
+                                binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility = View.VISIBLE
+                                binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.GONE
+                                binding.searchToolBarLayout.searchToolbarSearchEdt.setText(
+                                    queryString)
+                                binding.searchToolBarLayout.searchToolbarSearchEdt.setSelection(cursorPosition)
+                            }// end of if block
+                        }// end of else block
+
+                        if(previousSheetPosition == APP_SHEET_UP_POSITION)
+                        {
+                            binding.addItemLayout.goingShoppingOnTxv.text = savedInstanceState.getString(SHOPPING_DATE)
+                            binding.addItemLayout.itemNameTxv.setText(savedInstanceState.getString(PRODUCT_NAME))
+                            binding.addItemLayout.itemCategorySpn.setSelection(mCategoryAdapter.getPosition(
+                                savedInstanceState.getString(PRODUCT_CATEGORY)))
+                            binding.addItemLayout.itemQuantityTxv.setText(savedInstanceState.getString(PRODUCT_QUANTITY))
+                            binding.addItemLayout.itemUnitPriceTxv.setText(savedInstanceState.getString(PRODUCT_UNIT_PRICE))
+                            binding.addItemLayout.itemNameTxv.setSelection(binding.addItemLayout.itemNameTxv.text.length)
+
+                            toggleAddItemSheet(null)
+                        }// end of if block
+                    }// end of if block
+                }// end of if block
+            })
+    }// end of function initObserver
+
+    /**
+     * Initialize the recycler view
+     */
+    private fun initRecyclerView()
+    {
+        mLinearLayoutManager = LinearLayoutManager(context)
+
+        val divider = MarginDividerItemDecoration(
+            BungaloShopperApp.shopperContext,
+            mLinearLayoutManager.orientation,
+            Utils.devicePixelsToPixels(8, BungaloShopperApp.shopperContext)
         )
 
-        mSnackTime = actionReaction.view
-        infoText.setTextColor(Color.WHITE)
-        actionReaction.setActionTextColor(Color.GREEN)
-        actionReaction.show()
-    }// end of function snackNotification
+        with(binding.shoppingListRv)
+        {
+            setHasFixedSize(true)
+            addItemDecoration(divider)
+            layoutManager = mLinearLayoutManager
+        }
+
+        ItemTouchHelper(iTouchCallback).attachToRecyclerView(binding.shoppingListRv)
+    } // end of function initRecyclerView
+
+    /**
+     * Setup the listener for the view
+     */
+    private fun setViewListeners()
+    {
+        // Main Toolbar
+        binding.mainToolBarLayout.searchShoppingListImv.setOnClickListener {
+            toggleToolBarState()
+        }
+
+        binding.mainToolBarLayout.addToShoppingListImv.setOnClickListener {
+            toggleAddItemSheet(null)
+            hideBillingSnackBar()
+        }// end of imvAdd.setOnClickListener block
+
+        binding.mainToolBarLayout.billTotalImv.setOnClickListener {
+            showBillingSnackBar()
+        }// end of imvBill.setOnClickListener block
+
+        // Search Toolbar
+        binding.searchToolBarLayout.backToNormalImv.setOnClickListener {
+            toggleToolBarState()
+        }
+
+        binding.searchToolBarLayout.searchToolbarSearchEdt.addTextChangedListener(object : TextWatcher
+        {
+            override fun afterTextChanged(s: Editable) {}
+
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int)
+            {
+                if (binding.searchToolBarLayout.searchToolbarSearchEdt.text.isNotEmpty())
+                {
+                    binding.searchToolBarLayout.clearFilterImv.visibility = View.VISIBLE
+                }// end of if block
+                else
+                {
+                    binding.searchToolBarLayout.clearFilterImv.visibility = View.INVISIBLE
+                }// end of else block
+
+                if (::mAdapter.isInitialized)
+                {
+                    mAdapter.filterItems(binding.searchToolBarLayout.searchToolbarSearchEdt.text.toString())
+                }// end of if block
+            }
+        })
+
+        binding.searchToolBarLayout.clearFilterImv.setOnClickListener {
+            binding.searchToolBarLayout.searchToolbarSearchEdt.setText("")
+        }
+
+        // Add Item Sheet
+        binding.addItemLayout.addItemBtn.setOnClickListener {
+            val itemId = "bs${SimpleDateFormat("HHmmssSSS", Locale.ENGLISH).format(Date())}"
+            val shoppingDate = Utils.longDayAndMonthDate.parse(binding.addItemLayout.goingShoppingOnTxv.text.toString())
+
+            if(binding.addItemLayout.itemNameTxv.text.isNotEmpty())
+            {
+                val newItem = ShoppingListItemEntity(
+                    0,
+                    itemId,
+                    Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
+                    binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
+                    if (binding.addItemLayout.itemNameTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                        .toInt() else 1,
+                    if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
+                        .toDouble() else 0.0,
+                    shoppingDate!!.time
+                )
+
+                if (binding.addItemLayout.addItemBtn.text == getString(R.string.update_item))
+                {
+                    addOrUpdate(newItem)
+                }// end of if block
+                else
+                {
+                    addOrUpdate(newItem)
+                }// end of else block
+
+                showBillTotal(mContext)
+            }// end of if block
+            else
+            {
+                Toast.makeText(mContext, "Enter the item to be added!",
+                    Toast.LENGTH_SHORT).show()
+                binding.addItemLayout.addItemBtn.requestFocus()
+            }// end of else block
+        }
+
+        binding.addItemLayout.cancelBtn.setOnClickListener {
+            toggleAddItemSheet(null)
+            binding.addItemLayout.itemNameTxv.setText("")
+            binding.addItemLayout.itemCategorySpn.setSelection(0)
+            binding.addItemLayout.itemNameTxv.setText("")
+            binding.addItemLayout.itemUnitPriceTxv.setText("")
+        }
+
+        binding.addItemLayout.goingShoppingOnTxv.setOnClickListener {
+            showDateTimeDialog(binding.root.context)
+        }
+    }// end of function setViewListeners
+
+    //endregion
+
+    //region View Toggles
+
+    /**
+     * Resets the fields of the add sheet
+     */
+    private fun resetAddSheet()
+    {
+        binding.addItemLayout.itemNameTxv.setText("")
+        binding.addItemLayout.itemCategorySpn.setSelection(0)
+        binding.addItemLayout.itemQuantityTxv.setText("")
+        binding.addItemLayout.itemUnitPriceTxv.setText("")
+    }// end of function resetAddSheet
+
+    /**
+     * Set the state of the app bar
+     *
+     * @param state The current state of the app bar
+     */
+    private fun setAppBarState(state: Int)
+    {
+        mAppBarState = state
+
+        if (mAppBarState == STANDARD_APPBAR)
+        {
+            binding.searchToolBarLayout.root.animate()
+                .alpha(1f)
+                .setDuration(250)
+                .setListener(object : AnimatorListenerAdapter()
+                {
+                    override fun onAnimationEnd(animation: Animator)
+                    {
+                        binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility = View.GONE
+                        binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.VISIBLE
+                    }
+                })
+
+            val im: InputMethodManager =
+                requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            val view = view
+
+            try
+            {
+                im.hideSoftInputFromWindow(view!!.windowToken, 0) // make keyboard hide
+            }// end of try block
+            catch (e: NullPointerException) {}
+        }// end of if block
+        else if (mAppBarState == SEARCH_APPBAR)
+        {
+            binding.searchToolBarLayout.root.search_tool_bar_layout.animate()
+                .alpha(1f)
+                .setDuration(250)
+                .setListener(object : AnimatorListenerAdapter()
+                {
+                    override fun onAnimationEnd(animation: Animator)
+                    {
+                        binding.mainToolBarLayout.root.main_tool_bar_layout.visibility = View.GONE
+                        binding.searchToolBarLayout.root.selected_shopping_search_app_bar.visibility =
+                            View.VISIBLE
+                    }
+                })
+
+            val im: InputMethodManager =
+                requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            im.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0) // make keyboard popup
+        }// end of else if block
+    }// end of function setAppBarState
 
     /**
      * Show the sheet for adding items
      */
     fun toggleAddItemSheet(shoppingItem: ShoppingListItemEntity?)
     {
-        val h = mAddSheet.measuredHeight
+        val h = binding.addItemLayout.root.measuredHeight
 
-        if(mPos == 1)
+        if(mPos == APP_SHEET_UP_POSITION)
         {
-            mAddSheet.animate()
+            binding.addItemLayout.root.animate()
                 .translationYBy(0f)
                 .translationY(h.toFloat())
                 .setDuration(500)
                 .withEndAction {
-                    mPos = 0
+                    mPos = APP_SHEET_DOWN_POSITION
                 }
         }// end of if block
         else
         {
-            mAddSheet.animate()
+            binding.addItemLayout.root.animate()
                 .translationYBy(h.toFloat())
                 .translationY(0f)
                 .setDuration(500)
                 .withEndAction {
-                    mPos = 1
+                    mPos = APP_SHEET_UP_POSITION
                 }
         }// end of else block
 
         if(shoppingItem != null)
         {
-            mGoingShoppingDate.text = Utils.longDayAndMonthDate.format(shoppingItem.shoppingDate)
-            mShoppingItem.setText(shoppingItem.productName)
-            mCategory.setSelection(mCategoryAdapter.getPosition(shoppingItem.productCategory))
-            mItemQuantity.setText(shoppingItem.productQuantity.toString())
-            mUnitPrice.setText(shoppingItem.unitPrice.toString())
-
-            btnAddItem.text = getString(R.string.update_item)
+            binding.addItemLayout.goingShoppingOnTxv.text = Utils.longDayAndMonthDate.format(shoppingItem.shoppingDate)
+            binding.addItemLayout.itemNameTxv.setText(shoppingItem.productName)
+            binding.addItemLayout.itemCategorySpn.setSelection(mCategoryAdapter.getPosition(shoppingItem.productCategory))
+            binding.addItemLayout.itemQuantityTxv.setText(shoppingItem.productQuantity.toString())
+            binding.addItemLayout.itemUnitPriceTxv.setText(shoppingItem.unitPrice.toString())
+            binding.addItemLayout.addItemBtn.text = getString(R.string.update_item)
         }// end of if block
         else
         {
-            btnAddItem.text = getString(R.string.add_item)
+            binding.addItemLayout.goingShoppingOnTxv.text = Utils.longDayAndMonthDate.format(Date().time)
+            binding.addItemLayout.itemNameTxv.requestFocus()
+            binding.addItemLayout.addItemBtn.text = getString(R.string.add_item)
         }// end of else block
     }// end of function toggleAddItemSheet
 
@@ -1131,18 +1212,14 @@ class ShoppingListFragment : Fragment()
      */
     private fun toggleToolBarState()
     {
-        mFiltering = if (mAppBarState == STANDARD_APPBAR)
+        if (mAppBarState == STANDARD_APPBAR)
         {
             setAppBarState(SEARCH_APPBAR)
-            true
         }// end of if block
         else
         {
             setAppBarState(STANDARD_APPBAR)
-            mAdapter.filterItems("")
-            false
         }// end of else block
     }// end of function toggleToolBarState
-
     //endregion
 }// end of class ShoppingListFragment
