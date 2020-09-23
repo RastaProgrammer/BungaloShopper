@@ -12,6 +12,8 @@ import com.bushbungalo.bungaloshopper.databinding.RemoveItemPromptLayoutBinding
 import com.bushbungalo.bungaloshopper.utils.Utils
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.utils.Utils.longDayAndMonthDate
+import com.bushbungalo.bungaloshopper.view.MainFragment
+import kotlinx.android.synthetic.main.main_fragment.*
 import kotlinx.android.synthetic.main.main_fragment_list_item.view.*
 import java.util.*
 
@@ -109,6 +111,8 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
         if (filterBy.isEmpty())
         {
             shoppingDates.addAll(shoppingDatesCopy)
+            (fragmentListener as MainFragment).no_results_txv.visibility = View.INVISIBLE
+            (fragmentListener as MainFragment).daily_lists_body_scroller.visibility = View.VISIBLE
         }// end of if block
         else
         {
@@ -122,6 +126,19 @@ class DatesAdapter(private var shoppingDates: MutableList<Long>,
                     shoppingDates.add(item)
                 }// end of if block
             }// end of range for loop
+
+            if(shoppingDates.size == 0)
+            {
+                val info = "No results for \"$filterBy\""
+                (fragmentListener as MainFragment).no_results_txv.text = info
+                (fragmentListener as MainFragment).no_results_txv.visibility = View.VISIBLE
+                (fragmentListener as MainFragment).daily_lists_body_scroller.visibility = View.INVISIBLE
+            }// end of if block
+            else
+            {
+                (fragmentListener as MainFragment).no_results_txv.visibility = View.INVISIBLE
+                (fragmentListener as MainFragment).daily_lists_body_scroller.visibility = View.VISIBLE
+            }// end of else block
         }// end of else block
 
         notifyDataSetChanged()

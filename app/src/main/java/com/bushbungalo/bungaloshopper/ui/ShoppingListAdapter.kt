@@ -10,11 +10,14 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bushbungalo.bungaloshopper.R
 import com.bushbungalo.bungaloshopper.model.ShoppingListItemEntity
+import com.bushbungalo.bungaloshopper.utils.DEFAULT_ITEM_QUANTITY
+import com.bushbungalo.bungaloshopper.utils.DEFAULT_ITEM_UNIT_PRICE
 import com.bushbungalo.bungaloshopper.utils.Utils
 import com.bushbungalo.bungaloshopper.utils.Utils.ItemViewType
 import com.bushbungalo.bungaloshopper.utils.Utils.loadCustomFont
 import com.bushbungalo.bungaloshopper.view.BungaloShopperApp
 import com.bushbungalo.bungaloshopper.view.ShoppingListFragment
+import kotlinx.android.synthetic.main.day_shopping_list_fragment.*
 import java.util.*
 
 class ShoppingListAdapter(
@@ -39,10 +42,16 @@ class ShoppingListAdapter(
 
     //endregion
 
+    //region Construction
+
     init
     {
         shoppingListCopy.addAll(shoppingItems)
     }// end of init block
+
+    //endregion
+
+    //region ViewHolder
 
     inner class ShoppingListViewHolder(taskItem: View): RecyclerView.ViewHolder(taskItem)
     {
@@ -102,6 +111,10 @@ class ShoppingListAdapter(
         }// end of function bindShoppingList
     }// end of inner class ShoppingListViewHolder
 
+    //endregion
+
+    //region RecyclerView.Adapter Interface Implementations
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ShoppingListViewHolder
     {
         categoryChange =
@@ -138,15 +151,9 @@ class ShoppingListAdapter(
         return ShoppingListViewHolder(shoppingListView)
     }// end of function onCreateViewHolder
 
-    override fun getItemCount(): Int
-    {
-        return shoppingItems.size
-    }// end of function getItemCount
+    override fun getItemCount(): Int = shoppingItems.size
 
-    override fun getItemId(position: Int): Long
-    {
-        return position.toLong()
-    }// end of function getItemId
+    override fun getItemId(position: Int): Long = position.toLong()
 
     override fun getItemViewType(position: Int): Int
     {
@@ -191,6 +198,10 @@ class ShoppingListAdapter(
         }// end of if block
     }// end of function onBindViewHolder
 
+    //endregion
+
+    //region Adapter specific functions
+
     /**
      * Filters the [RecyclerView] using a [String]
      *
@@ -203,6 +214,7 @@ class ShoppingListAdapter(
         if (filterBy.isEmpty())
         {
             shoppingItems.addAll(shoppingListCopy)
+            fragment.no_results_txv.visibility = View.INVISIBLE
         }// end of if block
         else
         {
@@ -212,6 +224,7 @@ class ShoppingListAdapter(
             {
                 if (item.productName.toLowerCase(Locale.ROOT).contains(filterBy))
                 {
+                    // Insert a header for this item if the header is not already present
                     if(item.productName != Utils.HEADER_ITEM)
                     {
                         if(!previousCategories.contains(item.productCategory))
@@ -222,17 +235,28 @@ class ShoppingListAdapter(
                                     shoppingListId = "",
                                     productName = Utils.HEADER_ITEM,
                                     productCategory = item.productCategory,
-                                    productQuantity = 0,
-                                    unitPrice = 0.0,
+                                    productQuantity = DEFAULT_ITEM_QUANTITY,
+                                    unitPrice = DEFAULT_ITEM_UNIT_PRICE,
                                     shoppingDate = item.shoppingDate
                                 ))
-                        }
+                        }// end of if block
 
                         shoppingItems.add(item)
                         previousCategories.add(item.productCategory)
-                    }
+                    }// end of if block
                 }// end of if block
             }// end of range for loop
+
+            if(shoppingItems.size == 0)
+            {
+                val info = "No results for \"$filterBy\""
+                fragment.no_results_txv.text = info
+                fragment.no_results_txv.visibility = View.VISIBLE
+            }// end of if block
+            else
+            {
+                fragment.no_results_txv.visibility = View.INVISIBLE
+            }// end of else block
         }// end of else block
 
         mCurrentCategory = ""
@@ -249,4 +273,7 @@ class ShoppingListAdapter(
         fragment.updateId = item.id
         fragment.toggleAddItemSheet(item)
     }// end of function updateItem
+
+    //endregion
+
 }// end of class ShoppingListAdapter

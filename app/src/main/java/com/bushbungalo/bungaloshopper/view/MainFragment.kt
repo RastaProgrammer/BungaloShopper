@@ -66,7 +66,7 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
 
     //endregion
 
-    //region Interface Implementations
+    //region Fragment Interface Implementations
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -87,7 +87,7 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
         setViewListeners()
         
         binding.mainToolBarLayout.billTotalImv.visibility = View.GONE
-        binding.mainToolBarLayout.searchToolbarTitleTxv.text = resources.getString(R.string.main_fragment_name)
+        binding.mainToolBarLayout.searchToolbarTitleTxv.text = resources.getString(R.string.default_fragment_name)
 
         requireActivity().onBackPressedDispatcher.addCallback (
             viewLifecycleOwner,
@@ -98,6 +98,18 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
                     if(mAppBarState != STANDARD_APPBAR)
                     {
                         toggleToolBarState()
+                        val im: InputMethodManager =
+                            requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        val view = view
+
+                        try
+                        {
+                            im.hideSoftInputFromWindow(view!!.windowToken, 0) // make keyboard hide
+                        }// end of try block
+                        catch (e: NullPointerException) {}
+
+                        binding.searchToolBarLayout.searchToolbarSearchEdt.setText("")
+                        mAdapter.filterItems("")
                     }// end of if block
                     else
                     {
@@ -252,6 +264,7 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
         // Main Toolbar
         binding.mainToolBarLayout.searchShoppingListImv.setOnClickListener {
             toggleToolBarState()
+            binding.searchToolBarLayout.searchToolbarSearchEdt.requestFocus()
         }
 
         binding.mainToolBarLayout.addToShoppingListImv.setOnClickListener {
@@ -298,7 +311,7 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
                     itemId,
                     Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
                     binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
-                    if (binding.addItemLayout.itemNameTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
                         .toInt() else 1,
                     if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
                         .toDouble() else 0.0,
@@ -334,6 +347,30 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
             showDateTimeDialog(binding.root.context)
         }
 
+        binding.addItemLayout.itemNameTxv.onFocusChangeListener =
+            View.OnFocusChangeListener { _, hasFocus ->
+                if(!hasFocus)
+                {
+                    if(binding.addItemLayout.itemNameTxv.text.isNotEmpty())
+                    {
+                        binding.addItemLayout.itemNameTxv.setText(
+                            Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()))
+                    }// end of if block
+                }// end of if block
+            }
+
+        binding.addItemLayout.itemUnitPriceTxv.onFocusChangeListener =
+            View.OnFocusChangeListener { _, hasFocus ->
+                if(!hasFocus)
+                {
+                    if(binding.addItemLayout.itemUnitPriceTxv.text.isNotEmpty() &&
+                        binding.addItemLayout.itemUnitPriceTxv.text.toString().length > 1) {
+                        val unitPrice = String.format("%.2f", binding.addItemLayout.itemUnitPriceTxv.text.toString().toFloat())
+
+                        binding.addItemLayout.itemUnitPriceTxv.setText(unitPrice)
+                    }// end of if block
+                }// end of if block
+            }
     }// end of function setViewListeners
     //endregion
 
@@ -376,10 +413,13 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
                 .setDuration(500)
                 .withEndAction {
                     mPos = APP_SHEET_DOWN_POSITION
+                    binding.addItemLayout.root.visibility = View.INVISIBLE
                 }
         }// end of if block
         else
         {
+            binding.addItemLayout.root.visibility = View.VISIBLE
+
             binding.addItemLayout.root.animate()
                 .translationYBy(h.toFloat())
                 .translationY(0f)
@@ -388,6 +428,10 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
                     mPos = APP_SHEET_UP_POSITION
                 }
         }// end of else block
+
+        binding.addItemLayout.goingShoppingOnTxv.text = Utils.longDayAndMonthDate.format(Date().time)
+        binding.addItemLayout.itemNameTxv.requestFocus()
+        binding.addItemLayout.addItemBtn.text = getString(R.string.add_item)
     }// end of function toggleAddItemSheet
 
     /**
@@ -730,6 +774,9 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
 
         handler.postDelayed(incrementWheel, 20)
     }// end of function animatePicker
+    //endregion
+
+    //region Adapter Interface Implementations
 
     override fun onItemClick(date: Long)
     {

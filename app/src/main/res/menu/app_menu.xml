@@ -5,13 +5,13 @@
     <item android:id="@+id/action_add"
         android:orderInCategory="1"
         android:title="@string/add_to_shopping_list"
-        android:icon="@android:drawable/ic_menu_add"
+        android:icon="@drawable/sl_add_icon"
         app:showAsAction="always|collapseActionView" />
 
     <item android:id="@+id/action_search"
         android:orderInCategory="2"
         android:title="@string/search_list"
-        android:icon="@android:drawable/ic_menu_search"
+        android:icon="@drawable/sl_search"
         app:showAsAction="ifRoom|collapseActionView"
         app:actionViewClass="androidx.appcompat.widget.SearchView" />
 </menu>

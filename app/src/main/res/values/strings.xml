@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">BungaloShopper</string>
-    <string name="main_fragment_name">Bungalo Shopper</string>
+    <string name="default_fragment_name">Bungalo Shopper</string>
     <string name="shopping_list_name">Shopping List</string>
     <string name="db_name">bungalo_shopper</string>
     <string name="default_category_placeholder">Product Category</string>

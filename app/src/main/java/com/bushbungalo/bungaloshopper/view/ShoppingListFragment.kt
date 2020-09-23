@@ -269,6 +269,7 @@ class ShoppingListFragment : Fragment()
         val categories = resources.getStringArray(R.array.categories)
         mCategoryAdapter = CategoriesAdapter(binding.root.context, categories.toMutableList())
         binding.addItemLayout.itemCategorySpn.adapter = mCategoryAdapter
+        binding.mainToolBarLayout.searchToolbarTitleTxv.text = resources.getString(R.string.shopping_list_name)
 
         loadCustomFont(binding.root)
 
@@ -288,6 +289,18 @@ class ShoppingListFragment : Fragment()
                     if(mAppBarState != STANDARD_APPBAR)
                     {
                         toggleToolBarState()
+                        val im: InputMethodManager =
+                            requireActivity().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+                        val view = view
+
+                        try
+                        {
+                            im.hideSoftInputFromWindow(view!!.windowToken, 0) // make keyboard hide
+                        }// end of try block
+                        catch (e: NullPointerException) {}
+
+                        binding.searchToolBarLayout.searchToolbarSearchEdt.setText("")
+                        mAdapter.filterItems("")
                     }// end of if block
                     else
                     {
@@ -488,8 +501,7 @@ class ShoppingListFragment : Fragment()
 
         loadCustomFont(promptBinding.removeItemPromptRoot)
 
-        val shoppingDate = Utils.longDayAndMonthDate.format(Date(item.shoppingDate))
-        val prompt = "Do you wish to remove the shopping list for $shoppingDate from the database?"
+        val prompt = "Do you wish to remove \"${item.productName}\" from the list of items?"
 
         promptBinding.removeItemPromptTxv.text = prompt
 
@@ -998,6 +1010,7 @@ class ShoppingListFragment : Fragment()
         // Main Toolbar
         binding.mainToolBarLayout.searchShoppingListImv.setOnClickListener {
             toggleToolBarState()
+            binding.searchToolBarLayout.searchToolbarSearchEdt.requestFocus()
         }
 
         binding.mainToolBarLayout.addToShoppingListImv.setOnClickListener {
@@ -1054,7 +1067,7 @@ class ShoppingListFragment : Fragment()
                     itemId,
                     Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
                     binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
-                    if (binding.addItemLayout.itemNameTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
                         .toInt() else 1,
                     if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
                         .toDouble() else 0.0,
@@ -1091,6 +1104,31 @@ class ShoppingListFragment : Fragment()
         binding.addItemLayout.goingShoppingOnTxv.setOnClickListener {
             showDateTimeDialog(binding.root.context)
         }
+
+        binding.addItemLayout.itemNameTxv.onFocusChangeListener =
+            View.OnFocusChangeListener { _, hasFocus ->
+                if(!hasFocus)
+                {
+                    if(binding.addItemLayout.itemNameTxv.text.isNotEmpty())
+                    {
+                        binding.addItemLayout.itemNameTxv.setText(
+                            Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()))
+                    }// end of if block
+                }// end of if block
+            }
+
+        binding.addItemLayout.itemUnitPriceTxv.onFocusChangeListener =
+            View.OnFocusChangeListener { _, hasFocus ->
+                if(!hasFocus)
+                {
+                    if(binding.addItemLayout.itemUnitPriceTxv.text.isNotEmpty() &&
+                        binding.addItemLayout.itemUnitPriceTxv.text.toString().length > 1) {
+                        val unitPrice = String.format("%.2f", binding.addItemLayout.itemUnitPriceTxv.text.toString().toFloat())
+
+                        binding.addItemLayout.itemUnitPriceTxv.setText(unitPrice)
+                    }// end of if block
+                }// end of if block
+            }
     }// end of function setViewListeners
 
     //endregion
@@ -1177,10 +1215,13 @@ class ShoppingListFragment : Fragment()
                 .setDuration(500)
                 .withEndAction {
                     mPos = APP_SHEET_DOWN_POSITION
+                    binding.addItemLayout.root.visibility = View.INVISIBLE
                 }
         }// end of if block
         else
         {
+            binding.addItemLayout.root.visibility = View.VISIBLE
+
             binding.addItemLayout.root.animate()
                 .translationYBy(h.toFloat())
                 .translationY(0f)
