@@ -311,7 +311,7 @@ class MainFragment : Fragment(), DatesAdapter.ListItemListener
                     itemId,
                     Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
                     binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
-                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemQuantityTxv.text.toString()
                         .toInt() else 1,
                     if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
                         .toDouble() else 0.0,
