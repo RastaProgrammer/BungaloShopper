@@ -305,6 +305,8 @@ class ShoppingListFragment : Fragment()
                     {
                         findNavController().navigateUp()
                     }// end of else block
+
+                    hideBillingSnackBar()
                 }
             }
         )
