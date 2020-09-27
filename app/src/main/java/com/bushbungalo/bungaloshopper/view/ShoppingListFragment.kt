@@ -42,7 +42,6 @@ import java.lang.reflect.Method
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class ShoppingListFragment : Fragment()
 {
@@ -480,8 +479,8 @@ class ShoppingListFragment : Fragment()
         // Hide the sheet
         toggleAddItemSheet(null)
 
-        snackNotification(
-            "Bill Total: $${(mBillTotal * 100.0).roundToInt() / 100.0}",
+        snackNotification("Bill Total (-Tax): ${
+            Utils.convertToCurrency(mBillTotal, Locale.US)}",
             mContext.resources.getColor(R.color.colorPrimaryDark, null))
     }// end of function addOrUpdate
 
@@ -938,6 +937,9 @@ class ShoppingListFragment : Fragment()
                     binding.shoppingListRv.adapter = mAdapter
                     mAdapter.notifyDataSetChanged()
 
+                    calculateBillTotal()
+                    showBillTotal(mContext)
+
                     binding.shoppingDateTxv.text = formatterDate.format(sListDate)
 
                     if(savedInstanceState != null)
@@ -1067,7 +1069,7 @@ class ShoppingListFragment : Fragment()
                     itemId,
                     Utils.toProperCase(binding.addItemLayout.itemNameTxv.text.toString()),
                     binding.addItemLayout.itemCategorySpn.selectedItem.toString(),
-                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemNameTxv.text.toString()
+                    if (binding.addItemLayout.itemQuantityTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemQuantityTxv.text.toString()
                         .toInt() else 1,
                     if (binding.addItemLayout.itemUnitPriceTxv.text.toString().isNotEmpty()) binding.addItemLayout.itemUnitPriceTxv.text.toString()
                         .toDouble() else 0.0,
@@ -1082,8 +1084,6 @@ class ShoppingListFragment : Fragment()
                 {
                     addOrUpdate(newItem)
                 }// end of else block
-
-                showBillTotal(mContext)
             }// end of if block
             else
             {
